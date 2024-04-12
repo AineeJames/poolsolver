@@ -5,7 +5,10 @@ LIBS="-lm `pkg-config --libs raylib`"
 clang $CFLAGS src/*c -o $BINARY_NAME $LIBS
 
 if [[ $? == 0 ]]; then
-	echo "Compiled $BINARY_NAME successfully"
+	echo "Compiled $BINARY_NAME successfully!"
+	if [[ "$1" = "run" ]]; then
+		./$BINARY_NAME
+	fi
 else
-	echo "Failed to compile $BINARY_NAME"
+	echo "Failed to compile $BINARY_NAME!"
 fi
