@@ -1,7 +1,8 @@
-CFLAGS="-Werror -fsanitize=address -fsanitize=undefined -lraylib"
 BINARY_NAME="pool_sim"
+CFLAGS="-Werror -Wall -fsanitize=address -fsanitize=undefined `pkg-config --cflags raylib`"
+LIBS="-lm `pkg-config --libs raylib`"
 
-clang src/*.c $CFLAGS -o $BINARY_NAME
+clang $CFLAGS src/*c -o $BINARY_NAME $LIBS
 
 if [[ $? == 0 ]]; then
 	echo "Compiled $BINARY_NAME successfully"
