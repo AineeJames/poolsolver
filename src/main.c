@@ -88,7 +88,24 @@ void apply_friction_to_ball(Ball *ball) {
   }
 }
 
-void update_ball_velocities(Ball *ball1, Ball *ball2) {}
+void update_ball_velocities(Ball *ball1, Ball *ball2) {
+  Vector2 pos_delta = {0};
+  pos_delta.x = fabs(ball1->position.x - ball2->position.x);
+  pos_delta.y = fabs(ball1->position.y - ball2->position.y);
+
+  double distance = sqrtf(pow(ball1->position.x - ball2->position.x, 2) +
+                          pow(ball1->position.y - ball2->position.y, 2));
+
+  double nx = (ball1->position.x - ball2->position.y) / distance;
+  double ny = (ball1->position.y - ball2->position.y) / distance;
+
+  double p = (ball1->velocity.x * nx + ball1->velocity.y * ny -
+              ball2->velocity.x * nx - ball2->velocity.y * ny);
+  ball1->velocity.x = ball1->velocity.x - p * nx;
+  ball1->velocity.y = ball1->velocity.y - p * ny;
+  ball1->velocity.x = ball1->velocity.x - p * nx;
+  ball1->velocity.y = ball1->velocity.y - p * ny;
+}
 
 void step_physics_sim(Ball *balls, int num_balls) {
   // check if balls hit each other
