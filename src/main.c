@@ -15,6 +15,7 @@ typedef struct Ball {
   BallType type;
   Color color;
   int number;
+  Vector2 velocity;
 } Ball;
 
 void init_balls(Ball *balls) {
@@ -38,7 +39,7 @@ void init_balls(Ball *balls) {
     };
     balls[i].number = i;
     
-    float ball_x = rack_pos.x - (rack_col * sqrt(pow(BALL_RADIUS * 2, 2) - pow(BALL_RADIUS, 2))) - (rack_col * BALL_PADDING) + GetRandomValue(0, BALL_PADDING / 2);
+    float ball_x = rack_pos.x - ((rack_col-1) * sqrt(pow(BALL_RADIUS * 2, 2) - pow(BALL_RADIUS, 2))) - (rack_col * BALL_PADDING) + GetRandomValue(0, BALL_PADDING / 2);
     float ball_y = rack_pos.y - (rack_col * BALL_RADIUS) + (ball_idx * (BALL_RADIUS * 2)) + (ball_idx * BALL_PADDING) - GetRandomValue(0, BALL_PADDING / 2);
     balls[i].position = (Vector2){ball_x, ball_y};
     ball_idx += 1;
@@ -48,6 +49,31 @@ void init_balls(Ball *balls) {
 }
 void draw_ball(Ball ball);
 void draw_balls(Ball balls[16]);
+
+void draw_pool_table(Texture2D table_texture) {
+  DrawTexturePro(table_texture,
+                 (Rectangle){.x = 0,
+                             .y = 0,
+                             .width = table_texture.width,
+                             .height = table_texture.height},
+                 (Rectangle){.x = 0,
+                             .y = 0,
+                             .width = GetScreenWidth(),
+                             .height = GetScreenHeight()},
+                 (Vector2){0, 0}, 0, WHITE);
+}
+
+void step_physics_sim(Ball *balls, int num_balls) {
+  for (int i = 0; i < num_balls; i++) {
+    for (int j = 0; j < num_balls; j++) {
+      if (i == j) {
+        continue;
+      }
+      // bool is_ball_hitting = CheckCollisionCircles(
+      //     balls[i].position, BALL_RADIUS, balls[j].position, BALL_RADIUS);
+    }
+  }
+}
 
 int main(int argc, char *argv[]) {
   InitWindow(1700, 900, "Pool Sim");
@@ -60,16 +86,7 @@ int main(int argc, char *argv[]) {
   while (!WindowShouldClose()) {
     BeginDrawing();
     // DrawPoolTable
-    DrawTexturePro(table_texture,
-                   (Rectangle){.x = 0,
-                               .y = 0,
-                               .width = table_texture.width,
-                               .height = table_texture.height},
-                   (Rectangle){.x = 0,
-                               .y = 0,
-                               .width = GetScreenWidth(),
-                               .height = GetScreenHeight()},
-                   (Vector2){0, 0}, 0, WHITE);
+    draw_pool_table(table_texture);
     draw_balls(balls);
 
     Vector2 mouse_pos = GetMousePosition();
