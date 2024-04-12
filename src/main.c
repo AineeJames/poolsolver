@@ -5,6 +5,16 @@
 #define BALL_RADIUS 25
 #define BALL_PADDING 3
 #define FRICTION 0.001
+#define POCKET_RADIUS 50
+
+const Vector2 pocket_vecs[6] = {
+  {80.0, 73.0}, // top left
+  {80.0, 825.0}, // btm left
+  {850.0, 39.0}, // top middle
+  {850.0, 860.0}, // btm middle
+  {1620.0, 73.0}, // top right
+  {1620.0, 825.0}, // btm right
+};
 
 typedef enum {
   REG_BALL,
@@ -18,6 +28,7 @@ typedef struct Ball {
   int number;
   Vector2 velocity;
   bool collision_handled;
+  bool pocketed;
 } Ball;
 
 void init_balls(Ball *balls) {
@@ -28,6 +39,7 @@ void init_balls(Ball *balls) {
   balls[0].color = WHITE;
   balls[0].number = -1;
   balls[0].position = (Vector2){1230.0, 450.0};
+  balls[0].pocketed = false;
 
   int rack_col = 1;
   int ball_idx = 0;
@@ -46,11 +58,13 @@ void init_balls(Ball *balls) {
     balls[i].position = (Vector2){ball_x, ball_y};
     ball_idx += 1;
     if (ball_idx == rack_col) { rack_col++; ball_idx = 0; }
+    balls[i].pocketed = false;
   }
   TraceLog(LOG_INFO, "Initialized the balls");
 }
 void draw_ball(Ball ball);
 void draw_balls(Ball balls[16]);
+void draw_pockets_debug();
 
 void draw_pool_table(Texture2D table_texture) {
   DrawTexturePro(table_texture,
@@ -98,17 +112,21 @@ void step_physics_sim(Ball *balls, int num_balls) {
         balls[i].collision_handled = true;
         balls[j].collision_handled = true;
       }
-
-      // check if center inside holes
+    }
+  }
+  // handle pockets
+  for (int i = 0; i < num_balls; i++) {
+    for (int j = 0; j < 6; j++) {
+      bool pocketed = CheckCollisionPointCircle(balls[i].position, pocket_vecs[j], POCKET_RADIUS);
+      if (pocketed) {
+        balls[i].pocketed = true;
+        balls[i].velocity = (Vector2){0, 0};
+        balls[i].collision_handled = false;
+      }
     }
   }
 
-  // check if a ball should fall in hole
   for (int i = 0; i < num_balls; i++) {
-    // bool CheckCollisionPointCircle(balls[i].position, hole_location,
-    // hole_radius);
-    balls[i].collision_handled = false;
-
     // try to friction the vels
     apply_friction_to_ball(&balls[i]);
   }
@@ -126,21 +144,28 @@ int main(int argc, char *argv[]) {
     BeginDrawing();
     // DrawPoolTable
     draw_pool_table(table_texture);
+    draw_pockets_debug();
     draw_balls(balls);
 
     Vector2 mouse_pos = GetMousePosition();
     const char *mouse_pos_str =
         TextFormat("Pos = %d,%d\n", (int)mouse_pos.x, (int)mouse_pos.y);
-    DrawText(mouse_pos_str, 0, 0, 30, BLUE);
+    DrawText(mouse_pos_str, 0, 0, 30, BLACK);
 
     EndDrawing();
   }
   return EXIT_SUCCESS;
 }
 
+void draw_pockets_debug() {
+  for (int i = 0; i < 6; i++) {
+    DrawCircleV(pocket_vecs[i], POCKET_RADIUS, Fade(RED, 0.3));
+  }
+}
+
 void draw_balls(Ball balls[16]) {
   for (int i = 0; i < 16; i++) {
-    draw_ball(balls[i]);
+    if (!balls[i].pocketed) draw_ball(balls[i]);
   }
 }
 
