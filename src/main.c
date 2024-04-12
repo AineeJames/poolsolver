@@ -65,6 +65,8 @@ void apply_friction_to_ball(Ball *ball) {
   }
 }
 
+void update_ball_velocities(Ball *ball1, Ball *ball2) {}
+
 void step_physics_sim(Ball *balls, int num_balls) {
   // check if balls hit each other
   for (int i = 0; i < num_balls; i++) {
@@ -75,11 +77,13 @@ void step_physics_sim(Ball *balls, int num_balls) {
       if (balls[i].collision_handled == false &&
           balls[i].collision_handled == false) {
         // bool is_ball_hitting =
-        CheckCollisionCircles(balls[i].position, BALL_RADIUS, balls[j].position,
-                              BALL_RADIUS);
-        // update_ball_velocities();
-        balls[i].collision_handled = true;
-        balls[j].collision_handled = true;
+        if (CheckCollisionCircles(balls[i].position, BALL_RADIUS,
+                                  balls[j].position, BALL_RADIUS)) {
+
+          update_ball_velocities(&balls[i], &balls[j]);
+          balls[i].collision_handled = true;
+          balls[j].collision_handled = true;
+        }
       }
 
       // check if center inside holes
