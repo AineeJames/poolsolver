@@ -1,7 +1,9 @@
+#include <math.h>
 #include <raylib.h>
 #include <stdlib.h>
 
 #define BALL_RADIUS 25
+#define BALL_PADDING 3
 #define FRICTION 0.001
 
 typedef enum {
@@ -19,22 +21,43 @@ typedef struct Ball {
 } Ball;
 
 void init_balls(Ball *balls) {
-  int *leaker = malloc(1000);
 
-  leaker[0] = 1;
+  Vector2 rack_pos = (Vector2){470.0, 450.0};
+
   balls[0].type = CUE_BALL;
   balls[0].color = WHITE;
+  balls[0].number = -1;
+  balls[0].position = (Vector2){1230.0, 450.0};
 
+  int rack_col = 1;
+  int ball_idx = 0;
   for (int i = 1; i < 16; i++) {
     balls[i].type = REG_BALL;
-    balls[i].color = (Color){.r = GetRandomValue(0, 255),
-                             .g = GetRandomValue(0, 255),
-                             .b = GetRandomValue(0, 0),
-                             .a = 255};
+    balls[i].color = i == 8 ? BLACK
+                            : (Color){.r = GetRandomValue(50, 255),
+                                      .g = GetRandomValue(50, 255),
+                                      .b = GetRandomValue(50, 0),
+                                      .a = 255};
+    balls[i].number = i;
+
+    float ball_x =
+        rack_pos.x -
+        ((rack_col - 1) * sqrt(pow(BALL_RADIUS * 2, 2) - pow(BALL_RADIUS, 2))) -
+        (rack_col * BALL_PADDING) + GetRandomValue(0, BALL_PADDING / 2);
+    float ball_y = rack_pos.y - (rack_col * BALL_RADIUS) +
+                   (ball_idx * (BALL_RADIUS * 2)) + (ball_idx * BALL_PADDING) -
+                   GetRandomValue(0, BALL_PADDING / 2);
+    balls[i].position = (Vector2){ball_x, ball_y};
+    ball_idx += 1;
+    if (ball_idx == rack_col) {
+      rack_col++;
+      ball_idx = 0;
+    }
   }
   TraceLog(LOG_INFO, "Initialized the balls");
 }
 void draw_ball(Ball ball);
+void draw_balls(Ball balls[16]);
 
 void draw_pool_table(Texture2D table_texture) {
   DrawTexturePro(table_texture,
@@ -74,6 +97,8 @@ void step_physics_sim(Ball *balls, int num_balls) {
       if (i == j) {
         continue;
       }
+      // bool is_ball_hitting = CheckCollisionCircles(
+      //     balls[i].position, BALL_RADIUS, balls[j].position, BALL_RADIUS);
       if (balls[i].collision_handled == false &&
           balls[i].collision_handled == false) {
         // bool is_ball_hitting =
@@ -113,13 +138,8 @@ int main(int argc, char *argv[]) {
     BeginDrawing();
     // DrawPoolTable
     draw_pool_table(table_texture);
+    draw_balls(balls);
 
-    Ball test_ball = {.position = (Vector2){300, 300},
-                      .type = REG_BALL,
-                      .color = BLUE,
-                      .number = 1};
-    draw_ball(test_ball);
-    ClearBackground(RED);
     Vector2 mouse_pos = GetMousePosition();
     const char *mouse_pos_str =
         TextFormat("Pos = %d,%d\n", (int)mouse_pos.x, (int)mouse_pos.y);
@@ -130,14 +150,22 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 
+void draw_balls(Ball balls[16]) {
+  for (int i = 0; i < 16; i++) {
+    draw_ball(balls[i]);
+  }
+}
+
 void draw_ball(Ball ball) {
   DrawCircleV(ball.position, BALL_RADIUS, ball.color);
-  DrawCircleV(ball.position, BALL_RADIUS - (BALL_RADIUS / 3.), WHITE);
-  int fontSize = (BALL_RADIUS * 1.25);
-  const char *number_str = TextFormat("%d", ball.number);
-  int strLen = MeasureText(number_str, fontSize);
-  int textPositionX = ball.position.x - (strLen / 2.);
-  int textPositionY = ball.position.y - (fontSize / 2.);
-  DrawText(TextFormat("%d", ball.number), textPositionX, textPositionY,
-           fontSize, BLACK);
+  if (ball.number > 0) {
+    DrawCircleV(ball.position, BALL_RADIUS - (BALL_RADIUS / 3.), WHITE);
+    int fontSize = (BALL_RADIUS);
+    const char *number_str = TextFormat("%d", ball.number);
+    int strLen = MeasureText(number_str, fontSize);
+    int textPositionX = ball.position.x - (strLen / 2.);
+    int textPositionY = ball.position.y - (fontSize / 2.);
+    DrawText(TextFormat("%d", ball.number), textPositionX, textPositionY,
+             fontSize, BLACK);
+  }
 }
