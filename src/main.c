@@ -44,12 +44,6 @@ int main(int argc, char *argv[]) {
   while (!WindowShouldClose()) {
     BeginDrawing();
     // DrawPoolTable
-    Ball test_ball = {.position = (Vector2){300, 300},
-                      .type = REG_BALL,
-                      .color = BLUE,
-                      .number = 1};
-    draw_ball(test_ball);
-    ClearBackground(RED);
     DrawTexturePro(table_texture,
                    (Rectangle){.x = 0,
                                .y = 0,
@@ -60,6 +54,13 @@ int main(int argc, char *argv[]) {
                                .width = GetScreenWidth(),
                                .height = GetScreenHeight()},
                    (Vector2){0, 0}, 0, WHITE);
+
+    Ball test_ball = {.position = (Vector2){300, 300},
+                      .type = REG_BALL,
+                      .color = BLUE,
+                      .number = 1};
+    draw_ball(test_ball);
+    ClearBackground(RED);
     Vector2 mouse_pos = GetMousePosition();
     const char *mouse_pos_str =
         TextFormat("Pos = %d,%d\n", (int)mouse_pos.x, (int)mouse_pos.y);
