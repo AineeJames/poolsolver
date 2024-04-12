@@ -107,6 +107,8 @@ void update_ball_velocities(Ball *ball1, Ball *ball2) {
   ball1->velocity.y = ball1->velocity.y - p * ny;
 }
 
+void handle_ball_hit_wall(Ball *ball) {}
+
 void step_physics_sim(Ball *balls, int num_balls) {
   // check if balls hit each other
   for (int i = 0; i < num_balls; i++) {
@@ -130,6 +132,7 @@ void step_physics_sim(Ball *balls, int num_balls) {
 
       // check if center inside holes
     }
+    handle_ball_hit_wall(&balls[i]);
   }
 
   // check if a ball should fall in hole
