@@ -11,10 +11,13 @@ typedef struct {
   BallType type;
 } Ball;
 
+void init_balls(Ball *balls) { balls[0].type = CUE_BALL; }
+
 int main(int argc, char *argv[]) {
   InitWindow(600, 600, "Pool Sim");
+
   Ball balls[16] = {0};
-  balls[0].type = CUE_BALL;
+  init_balls(&balls[0]);
 
   while (!WindowShouldClose()) {
     BeginDrawing();
