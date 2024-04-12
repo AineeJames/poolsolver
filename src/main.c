@@ -4,6 +4,7 @@
 
 #define BALL_RADIUS 25
 #define BALL_PADDING 3
+#define FRICTION 0.001
 
 typedef enum {
   REG_BALL,
@@ -16,6 +17,7 @@ typedef struct Ball {
   Color color;
   int number;
   Vector2 velocity;
+  bool collision_handled;
 } Ball;
 
 void init_balls(Ball *balls) {
@@ -63,7 +65,24 @@ void draw_pool_table(Texture2D table_texture) {
                  (Vector2){0, 0}, 0, WHITE);
 }
 
+void apply_friction_to_ball(Ball *ball) {
+  if (ball->velocity.x > 0) {
+    if (ball->velocity.x < FRICTION) {
+      ball->velocity.x = 0;
+    } else {
+      ball->velocity.x -= FRICTION;
+    }
+  } else {
+    if (ball->velocity.y > -FRICTION) {
+      ball->velocity.y = 0;
+    } else {
+      ball->velocity.y += FRICTION;
+    }
+  }
+}
+
 void step_physics_sim(Ball *balls, int num_balls) {
+  // check if balls hit each other
   for (int i = 0; i < num_balls; i++) {
     for (int j = 0; j < num_balls; j++) {
       if (i == j) {
@@ -71,7 +90,27 @@ void step_physics_sim(Ball *balls, int num_balls) {
       }
       // bool is_ball_hitting = CheckCollisionCircles(
       //     balls[i].position, BALL_RADIUS, balls[j].position, BALL_RADIUS);
+      if (balls[i].collision_handled == false &&
+          balls[i].collision_handled == false) {
+        CheckCollisionCircles(balls[i].position, BALL_RADIUS, balls[j].position,
+                              BALL_RADIUS);
+        // update_ball_velocities();
+        balls[i].collision_handled = true;
+        balls[j].collision_handled = true;
+      }
+
+      // check if center inside holes
     }
+  }
+
+  // check if a ball should fall in hole
+  for (int i = 0; i < num_balls; i++) {
+    // bool CheckCollisionPointCircle(balls[i].position, hole_location,
+    // hole_radius);
+    balls[i].collision_handled = false;
+
+    // try to friction the vels
+    apply_friction_to_ball(&balls[i]);
   }
 }
 
