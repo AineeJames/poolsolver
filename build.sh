@@ -1,4 +1,4 @@
-CFLAGS="-Werror -fsanitize=address -fanalyzer -fsanitize=undefined"
+CFLAGS="-Werror -fsanitize=address -fanalyzer -fsanitize=undefined -lraylib"
 BINARY_NAME="pool_sim"
 
 gcc src/*.c $CFLAGS -o $BINARY_NAME
