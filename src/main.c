@@ -6,14 +6,15 @@
 #define BALL_PADDING 3
 #define FRICTION 0.001
 #define POCKET_RADIUS 50
+#define SPEED 1
 
 const Vector2 pocket_vecs[6] = {
-  {80.0, 73.0}, // top left
-  {80.0, 825.0}, // btm left
-  {850.0, 39.0}, // top middle
-  {850.0, 860.0}, // btm middle
-  {1620.0, 73.0}, // top right
-  {1620.0, 825.0}, // btm right
+    {80.0, 73.0},    // top left
+    {80.0, 825.0},   // btm left
+    {850.0, 39.0},   // top middle
+    {850.0, 860.0},  // btm middle
+    {1620.0, 73.0},  // top right
+    {1620.0, 825.0}, // btm right
 };
 
 typedef enum {
@@ -148,7 +149,8 @@ void step_physics_sim(Ball *balls, int num_balls) {
   // handle pockets
   for (int i = 0; i < num_balls; i++) {
     for (int j = 0; j < 6; j++) {
-      bool pocketed = CheckCollisionPointCircle(balls[i].position, pocket_vecs[j], POCKET_RADIUS);
+      bool pocketed = CheckCollisionPointCircle(balls[i].position,
+                                                pocket_vecs[j], POCKET_RADIUS);
       if (pocketed) {
         balls[i].pocketed = true;
         balls[i].velocity = (Vector2){0, 0};
@@ -161,6 +163,8 @@ void step_physics_sim(Ball *balls, int num_balls) {
   for (int i = 0; i < num_balls; i++) {
     // try to friction the vels
     apply_friction_to_ball(&balls[i]);
+    balls[i].position.x += balls[i].velocity.x * SPEED;
+    balls[i].position.y += balls[i].velocity.y * SPEED;
   }
 }
 
@@ -169,6 +173,7 @@ int main(int argc, char *argv[]) {
 
   Ball balls[16] = {0};
   init_balls(&balls[0]);
+  balls[0].velocity.x = -20;
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
 
@@ -185,6 +190,7 @@ int main(int argc, char *argv[]) {
     DrawText(mouse_pos_str, 0, 0, 30, BLACK);
 
     EndDrawing();
+    step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
   }
   return EXIT_SUCCESS;
 }
@@ -197,7 +203,8 @@ void draw_pockets_debug() {
 
 void draw_balls(Ball balls[16]) {
   for (int i = 0; i < 16; i++) {
-    if (!balls[i].pocketed) draw_ball(balls[i]);
+    if (!balls[i].pocketed)
+      draw_ball(balls[i]);
   }
 }
 
