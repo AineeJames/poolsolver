@@ -41,6 +41,8 @@ void init_balls(Ball *balls) {
   balls[0].number = -1;
   balls[0].position = (Vector2){1230.0, 450.0};
   balls[0].pocketed = false;
+  balls[0].velocity.x = -20;
+  balls[0].velocity.y = -2;
 
   int rack_col = 1;
   int ball_idx = 0;
@@ -67,6 +69,7 @@ void init_balls(Ball *balls) {
       ball_idx = 0;
     }
     balls[i].pocketed = false;
+    balls[i].velocity = (Vector2){0};
   }
   TraceLog(LOG_INFO, "Initialized the balls");
 }
@@ -173,12 +176,15 @@ int main(int argc, char *argv[]) {
 
   Ball balls[16] = {0};
   init_balls(&balls[0]);
-  balls[0].velocity.x = -20;
-  balls[0].velocity.y = -2;
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
 
   while (!WindowShouldClose()) {
+
+    if (IsKeyPressed(KEY_SPACE)) {
+      init_balls(&balls[0]);
+    }
+
     BeginDrawing();
     // DrawPoolTable
     draw_pool_table(table_texture);
