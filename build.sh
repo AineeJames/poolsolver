@@ -1,7 +1,7 @@
-CFLAGS="-Werror -fsanitize=address -fanalyzer -fsanitize=undefined -lraylib"
+CFLAGS="-Werror -fsanitize=address -fsanitize=undefined -lraylib"
 BINARY_NAME="pool_sim"
 
-gcc src/*.c $CFLAGS -o $BINARY_NAME
+clang src/*.c $CFLAGS -o $BINARY_NAME
 
 if [[ $? == 0 ]]; then
 	echo "Compiled $BINARY_NAME successfully"
