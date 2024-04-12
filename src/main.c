@@ -45,19 +45,26 @@ void init_balls(Ball *balls) {
   int ball_idx = 0;
   for (int i = 1; i < 16; i++) {
     balls[i].type = REG_BALL;
-    balls[i].color = i == 8 ? BLACK : (Color){
-      .r = GetRandomValue(50, 255),
-      .g = GetRandomValue(50, 255),
-      .b = GetRandomValue(50, 0),
-      .a = 255
-    };
+    balls[i].color = i == 8 ? BLACK
+                            : (Color){.r = GetRandomValue(50, 255),
+                                      .g = GetRandomValue(50, 255),
+                                      .b = GetRandomValue(50, 0),
+                                      .a = 255};
     balls[i].number = i;
-    
-    float ball_x = rack_pos.x - ((rack_col-1) * sqrt(pow(BALL_RADIUS * 2, 2) - pow(BALL_RADIUS, 2))) - (rack_col * BALL_PADDING) + GetRandomValue(0, BALL_PADDING / 2);
-    float ball_y = rack_pos.y - (rack_col * BALL_RADIUS) + (ball_idx * (BALL_RADIUS * 2)) + (ball_idx * BALL_PADDING) - GetRandomValue(0, BALL_PADDING / 2);
+
+    float ball_x =
+        rack_pos.x -
+        ((rack_col - 1) * sqrt(pow(BALL_RADIUS * 2, 2) - pow(BALL_RADIUS, 2))) -
+        (rack_col * BALL_PADDING) + GetRandomValue(0, BALL_PADDING / 2);
+    float ball_y = rack_pos.y - (rack_col * BALL_RADIUS) +
+                   (ball_idx * (BALL_RADIUS * 2)) + (ball_idx * BALL_PADDING) -
+                   GetRandomValue(0, BALL_PADDING / 2);
     balls[i].position = (Vector2){ball_x, ball_y};
     ball_idx += 1;
-    if (ball_idx == rack_col) { rack_col++; ball_idx = 0; }
+    if (ball_idx == rack_col) {
+      rack_col++;
+      ball_idx = 0;
+    }
     balls[i].pocketed = false;
   }
   TraceLog(LOG_INFO, "Initialized the balls");
@@ -95,6 +102,25 @@ void apply_friction_to_ball(Ball *ball) {
   }
 }
 
+void update_ball_velocities(Ball *ball1, Ball *ball2) {
+  Vector2 pos_delta = {0};
+  pos_delta.x = fabs(ball1->position.x - ball2->position.x);
+  pos_delta.y = fabs(ball1->position.y - ball2->position.y);
+
+  double distance = sqrtf(pow(ball1->position.x - ball2->position.x, 2) +
+                          pow(ball1->position.y - ball2->position.y, 2));
+
+  double nx = (ball1->position.x - ball2->position.y) / distance;
+  double ny = (ball1->position.y - ball2->position.y) / distance;
+
+  double p = (ball1->velocity.x * nx + ball1->velocity.y * ny -
+              ball2->velocity.x * nx - ball2->velocity.y * ny);
+  ball1->velocity.x = ball1->velocity.x - p * nx;
+  ball1->velocity.y = ball1->velocity.y - p * ny;
+  ball1->velocity.x = ball1->velocity.x - p * nx;
+  ball1->velocity.y = ball1->velocity.y - p * ny;
+}
+
 void step_physics_sim(Ball *balls, int num_balls) {
   // check if balls hit each other
   for (int i = 0; i < num_balls; i++) {
@@ -106,11 +132,14 @@ void step_physics_sim(Ball *balls, int num_balls) {
       //     balls[i].position, BALL_RADIUS, balls[j].position, BALL_RADIUS);
       if (balls[i].collision_handled == false &&
           balls[i].collision_handled == false) {
-        CheckCollisionCircles(balls[i].position, BALL_RADIUS, balls[j].position,
-                              BALL_RADIUS);
-        // update_ball_velocities();
-        balls[i].collision_handled = true;
-        balls[j].collision_handled = true;
+        // bool is_ball_hitting =
+        if (CheckCollisionCircles(balls[i].position, BALL_RADIUS,
+                                  balls[j].position, BALL_RADIUS)) {
+
+          update_ball_velocities(&balls[i], &balls[j]);
+          balls[i].collision_handled = true;
+          balls[j].collision_handled = true;
+        }
       }
     }
   }
