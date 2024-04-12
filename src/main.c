@@ -1,7 +1,7 @@
 #include <raylib.h>
 #include <stdlib.h>
 
-#define BALL_RADIUS 15
+#define BALL_RADIUS 25
 
 typedef enum {
   REG_BALL,
