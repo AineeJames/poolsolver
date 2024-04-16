@@ -41,7 +41,7 @@ void init_balls(Ball *balls) {
   balls[0].number = -1;
   balls[0].position = (Vector2){1230.0, 450.0};
   balls[0].pocketed = false;
-  balls[0].velocity.x = -20;
+  balls[0].velocity.x = -120;
   balls[0].velocity.y = -2;
 
   int rack_col = 1;
@@ -107,15 +107,11 @@ void apply_friction_to_ball(Ball *ball) {
 }
 
 void update_ball_velocities(Ball *ball1, Ball *ball2) {
-  Vector2 pos_delta = {0};
-  pos_delta.x = fabs(ball1->position.x - ball2->position.x);
-  pos_delta.y = fabs(ball1->position.y - ball2->position.y);
-
   double distance = sqrtf(pow(ball1->position.x - ball2->position.x, 2) +
                           pow(ball1->position.y - ball2->position.y, 2));
 
-  double nx = (ball1->position.x - ball2->position.y) / distance;
-  double ny = (ball1->position.y - ball2->position.y) / distance;
+  double nx = (ball2->position.x - ball1->position.x) / distance;
+  double ny = (ball2->position.y - ball1->position.y) / distance;
 
   double p = (ball1->velocity.x * nx + ball1->velocity.y * ny -
               ball2->velocity.x * nx - ball2->velocity.y * ny);
@@ -134,11 +130,8 @@ void step_physics_sim(Ball *balls, int num_balls) {
       if (i == j) {
         continue;
       }
-      // bool is_ball_hitting = CheckCollisionCircles(
-      //     balls[i].position, BALL_RADIUS, balls[j].position, BALL_RADIUS);
       if (balls[i].collision_handled == false &&
           balls[i].collision_handled == false) {
-        // bool is_ball_hitting =
         if (CheckCollisionCircles(balls[i].position, BALL_RADIUS,
                                   balls[j].position, BALL_RADIUS)) {
 
@@ -157,7 +150,7 @@ void step_physics_sim(Ball *balls, int num_balls) {
       if (pocketed) {
         balls[i].pocketed = true;
         balls[i].velocity = (Vector2){0, 0};
-        balls[i].collision_handled = false;
+        balls[i].collision_handled = true;
       }
     }
     handle_ball_hit_wall(&balls[i]);
