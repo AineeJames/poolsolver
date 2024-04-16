@@ -1,12 +1,14 @@
 #include <math.h>
 #include <raylib.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define BALL_RADIUS 25
 #define BALL_PADDING 3
 #define FRICTION 0.005
 #define POCKET_RADIUS 50
 #define SPEED 0.03
+#define NUM_BALLS 16
 
 const Vector2 pocket_vecs[6] = {
     {80.0, 73.0},    // top left
@@ -41,12 +43,12 @@ void init_balls(Ball *balls) {
   balls[0].number = -1;
   balls[0].position = (Vector2){1230.0, 450.0};
   balls[0].pocketed = false;
-  balls[0].velocity.x = -120;
+  balls[0].velocity.x = -240;
   balls[0].velocity.y = -2;
 
   int rack_col = 1;
   int ball_idx = 0;
-  for (int i = 1; i < 16; i++) {
+  for (int i = 1; i < NUM_BALLS; i++) {
     balls[i].type = REG_BALL;
     balls[i].color = i == 8 ? BLACK
                             : (Color){.r = GetRandomValue(50, 255),
@@ -74,7 +76,7 @@ void init_balls(Ball *balls) {
   TraceLog(LOG_INFO, "Initialized the balls");
 }
 void draw_ball(Ball ball);
-void draw_balls(Ball balls[16]);
+void draw_balls(Ball balls[NUM_BALLS]);
 void draw_pockets_debug();
 
 void draw_pool_table(Texture2D table_texture) {
@@ -126,19 +128,20 @@ void handle_ball_hit_wall(Ball *ball) {}
 void step_physics_sim(Ball *balls, int num_balls) {
   // check if balls hit each other
   for (int i = 0; i < num_balls; i++) {
+    Ball balls_stepped[NUM_BALLS] = {0};
+    memcpy(&balls_stepped[0], balls, sizeof(Ball) * NUM_BALLS);
+    balls_stepped[i].position.x += balls_stepped[i].velocity.x * SPEED;
+    balls_stepped[i].position.y += balls_stepped[i].velocity.y * SPEED;
+
     for (int j = 0; j < num_balls; j++) {
       if (i == j) {
         continue;
       }
-      if (balls[i].collision_handled == false &&
-          balls[i].collision_handled == false) {
-        if (CheckCollisionCircles(balls[i].position, BALL_RADIUS,
-                                  balls[j].position, BALL_RADIUS)) {
-
-          update_ball_velocities(&balls[i], &balls[j]);
-          balls[i].collision_handled = true;
-          balls[j].collision_handled = true;
-        }
+      if (CheckCollisionCircles(balls_stepped[i].position, BALL_RADIUS,
+                                balls[j].position, BALL_RADIUS)) {
+        update_ball_velocities(&balls[i], &balls[j]);
+      } else {
+        balls[i] = balls_stepped[i];
       }
     }
   }
@@ -156,22 +159,24 @@ void step_physics_sim(Ball *balls, int num_balls) {
     handle_ball_hit_wall(&balls[i]);
   }
 
-  for (int i = 0; i < num_balls; i++) {
-    // try to friction the vels
-    apply_friction_to_ball(&balls[i]);
-    balls[i].position.x += balls[i].velocity.x * SPEED;
-    balls[i].position.y += balls[i].velocity.y * SPEED;
-  }
+  // for (int i = 0; i < num_balls; i++) {
+  //   // try to friction the vels
+  //   apply_friction_to_ball(&balls[i]);
+  //   balls[i].position.x += balls[i].velocity.x * SPEED;
+  //   balls[i].position.y += balls[i].velocity.y * SPEED;
+  // }
 }
 
 int main(int argc, char *argv[]) {
+  SetTargetFPS(60);
   InitWindow(1700, 900, "Pool Sim");
 
-  Ball balls[16] = {0};
+  Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
 
+  int frame_cnt = 0;
   while (!WindowShouldClose()) {
 
     if (IsKeyPressed(KEY_SPACE)) {
@@ -190,7 +195,8 @@ int main(int argc, char *argv[]) {
     DrawText(mouse_pos_str, 0, 0, 30, BLACK);
 
     EndDrawing();
-    step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
+    if (frame_cnt % 10 == 0) step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
+    frame_cnt++;
   }
   return EXIT_SUCCESS;
 }
@@ -201,8 +207,8 @@ void draw_pockets_debug() {
   }
 }
 
-void draw_balls(Ball balls[16]) {
-  for (int i = 0; i < 16; i++) {
+void draw_balls(Ball balls[NUM_BALLS]) {
+  for (int i = 0; i < NUM_BALLS; i++) {
     if (!balls[i].pocketed)
       draw_ball(balls[i]);
   }
