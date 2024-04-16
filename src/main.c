@@ -4,9 +4,9 @@
 
 #define BALL_RADIUS 25
 #define BALL_PADDING 3
-#define FRICTION 0.001
+#define FRICTION 0.005
 #define POCKET_RADIUS 50
-#define SPEED 1
+#define SPEED 0.03
 
 const Vector2 pocket_vecs[6] = {
     {80.0, 73.0},    // top left
@@ -41,6 +41,8 @@ void init_balls(Ball *balls) {
   balls[0].number = -1;
   balls[0].position = (Vector2){1230.0, 450.0};
   balls[0].pocketed = false;
+  balls[0].velocity.x = -20;
+  balls[0].velocity.y = -2;
 
   int rack_col = 1;
   int ball_idx = 0;
@@ -67,6 +69,7 @@ void init_balls(Ball *balls) {
       ball_idx = 0;
     }
     balls[i].pocketed = false;
+    balls[i].velocity = (Vector2){0};
   }
   TraceLog(LOG_INFO, "Initialized the balls");
 }
@@ -118,8 +121,8 @@ void update_ball_velocities(Ball *ball1, Ball *ball2) {
               ball2->velocity.x * nx - ball2->velocity.y * ny);
   ball1->velocity.x = ball1->velocity.x - p * nx;
   ball1->velocity.y = ball1->velocity.y - p * ny;
-  ball1->velocity.x = ball1->velocity.x - p * nx;
-  ball1->velocity.y = ball1->velocity.y - p * ny;
+  ball2->velocity.x = ball2->velocity.x + p * nx;
+  ball2->velocity.y = ball2->velocity.y + p * ny;
 }
 
 void handle_ball_hit_wall(Ball *ball) {}
@@ -173,11 +176,15 @@ int main(int argc, char *argv[]) {
 
   Ball balls[16] = {0};
   init_balls(&balls[0]);
-  balls[0].velocity.x = -20;
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
 
   while (!WindowShouldClose()) {
+
+    if (IsKeyPressed(KEY_SPACE)) {
+      init_balls(&balls[0]);
+    }
+
     BeginDrawing();
     // DrawPoolTable
     draw_pool_table(table_texture);
