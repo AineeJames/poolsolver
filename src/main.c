@@ -79,7 +79,9 @@ int main(int argc, char *argv[]) {
 
   Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
-  benchmark_physics_sim();
+  // benchmark_physics_sim();
+  Vector2 optimal_velocity = brute_force();
+  balls[0].velocity = optimal_velocity;
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
 
@@ -87,6 +89,7 @@ int main(int argc, char *argv[]) {
 
     if (IsKeyPressed(KEY_SPACE)) {
       init_balls(&balls[0]);
+      balls[0].velocity = optimal_velocity;
     }
 
     BeginDrawing();
