@@ -15,7 +15,7 @@ void init_balls(Ball *balls) {
   balls[0].position = (Vector2){1230.0, 470.0};
   balls[0].pocketed = false;
   balls[0].velocity.x = -2000;
-  balls[0].velocity.y = -2;
+  balls[0].velocity.y = -20;
 
   int rack_col = 1;
   int ball_idx = 0;
@@ -101,21 +101,44 @@ void handle_ball_hit_wall(Ball *ball) {
   // allow ball to go in all holes
   bool collided_with_wall = false;
 
+  // need to go through all of the walls and see if
+  // line intersects circle
+
   if (ball->position.x < 0 + TableBorder ||
       ball->position.x > ScreenWidth - TableBorder) {
+    for (int i = 0;
+         i < sizeof(pocket_ignore_walls) / sizeof(pocket_ignore_walls[0]);
+         i++) {
+      if (CheckCollisionPointCircle(ball->position, pocket_ignore_walls[i],
+                                    POCKET_IGNORE_RADIUS)) {
+        // is inside ignore region
+        return;
+      }
+    }
     ball->velocity.x *= -1;
     collided_with_wall = true;
   }
 
   if (ball->position.y < 0 + TableBorder ||
       ball->position.y > ScreenHeight - TableBorder) {
+    for (int i = 0;
+         i < sizeof(pocket_ignore_walls) / sizeof(pocket_ignore_walls[0]);
+         i++) {
+      if (CheckCollisionPointCircle(ball->position, pocket_ignore_walls[i],
+                                    POCKET_IGNORE_RADIUS)) {
+        // is inside ignore region
+        return;
+      }
+    }
     ball->velocity.y *= -1;
     collided_with_wall = true;
   }
 
   if (collided_with_wall) {
-    Clamp(ball->position.x, BALL_RADIUS, ScreenWidth - BALL_RADIUS);
-    Clamp(ball->position.y, BALL_RADIUS, ScreenHeight - BALL_RADIUS);
+    Clamp(ball->position.x, BALL_RADIUS + TableBorder,
+          ScreenWidth - TableBorder - BALL_RADIUS);
+    Clamp(ball->position.y, BALL_RADIUS + TableBorder,
+          ScreenHeight - TableBorder - BALL_RADIUS);
   }
 }
 

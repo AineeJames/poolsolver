@@ -43,8 +43,24 @@ void draw_balls(Ball balls[NUM_BALLS]) {
   }
 }
 
+void draw_borders() {
+  for (int i = 0; i < sizeof(border_collisions) / sizeof(border_collisions[0]);
+       i++) {
+    if (border_collisions[i].is_horiz) {
+      DrawLineV(border_collisions[i].start, border_collisions[i].end, BLUE);
+    } else {
+      DrawLineV(border_collisions[i].start, border_collisions[i].end, RED);
+    }
+  }
+  for (int i = 0;
+       i < sizeof(pocket_ignore_walls) / sizeof(pocket_ignore_walls[0]); i++) {
+    DrawCircleV(pocket_ignore_walls[i], POCKET_IGNORE_RADIUS,
+                (Color){.r = 0, .g = 0, .b = 100, .a = 150});
+  }
+}
+
 int main(int argc, char *argv[]) {
-  SetTargetFPS(60);
+  SetTargetFPS(2000);
   InitWindow(1700, 900, "Pool Sim");
 
   Ball balls[NUM_BALLS] = {0};
@@ -53,7 +69,6 @@ int main(int argc, char *argv[]) {
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
 
-  int frame_cnt = 0;
   while (!WindowShouldClose()) {
 
     if (IsKeyPressed(KEY_SPACE)) {
@@ -65,6 +80,7 @@ int main(int argc, char *argv[]) {
     draw_pool_table(table_texture);
     draw_pockets_debug();
     draw_balls(balls);
+    draw_borders();
 
     Vector2 mouse_pos = GetMousePosition();
     const char *mouse_pos_str =
@@ -72,9 +88,13 @@ int main(int argc, char *argv[]) {
     DrawText(mouse_pos_str, 0, 0, 30, BLACK);
 
     EndDrawing();
-    if (frame_cnt % 1 == 0)
-      step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
-    frame_cnt++;
+    step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
+    if (is_sim_at_rest(&balls[0])) {
+      // randomize veloicity of cue ball and shoot again
+      init_balls(&balls[0]);
+      balls[0].velocity =
+          (Vector2){GetRandomValue(-2000, 2000), GetRandomValue(-2000, 2000)};
+    }
   }
   return EXIT_SUCCESS;
 }
