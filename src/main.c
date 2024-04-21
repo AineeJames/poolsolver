@@ -16,6 +16,7 @@
 const float min_velocity = 0.2;
 const int ScreenWidth = 1700;
 const int ScreenHeight = 900;
+const int TableBorder = 100;
 
 const Vector2 pocket_vecs[6] = {
     {80.0, 73.0},    // top left
@@ -146,14 +147,18 @@ void update_ball_velocities(Ball *ball1, Ball *ball2) {
 }
 
 void handle_ball_hit_wall(Ball *ball) {
+  // TODO: Need to change wall collisions to
+  // allow ball to go in all holes
   bool collided_with_wall = false;
 
-  if (ball->position.x < 0 || ball->position.x > ScreenWidth) {
+  if (ball->position.x < 0 + TableBorder ||
+      ball->position.x > ScreenWidth - TableBorder) {
     ball->velocity.x *= -1;
     collided_with_wall = true;
   }
 
-  if (ball->position.y < 0 || ball->position.y > ScreenHeight) {
+  if (ball->position.y < 0 + TableBorder ||
+      ball->position.y > ScreenHeight - TableBorder) {
     ball->velocity.y *= -1;
     collided_with_wall = true;
   }
