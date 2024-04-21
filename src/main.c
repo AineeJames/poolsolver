@@ -1,15 +1,20 @@
 #include <math.h>
 #include <raylib.h>
+#include <raymath.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define BALL_RADIUS 25
 #define BALL_PADDING 3
-#define FRICTION 0.99
+#define FRICTION 0.98
 #define POCKET_RADIUS 50
 #define SPEED 0.03
 #define NUM_BALLS 16
+
+const float min_velocity = 0.2;
+const int ScreenWidth = 1700;
+const int ScreenHeight = 900;
 
 const Vector2 pocket_vecs[6] = {
     {80.0, 73.0},    // top left
@@ -44,7 +49,7 @@ void init_balls(Ball *balls) {
   balls[0].number = -1;
   balls[0].position = (Vector2){1230.0, 470.0};
   balls[0].pocketed = false;
-  balls[0].velocity.x = -600;
+  balls[0].velocity.x = -2000;
   balls[0].velocity.y = -2;
 
   int rack_col = 1;
@@ -61,10 +66,11 @@ void init_balls(Ball *balls) {
     float ball_x =
         rack_pos.x -
         ((rack_col - 1) * sqrt(pow(BALL_RADIUS * 2, 2) - pow(BALL_RADIUS, 2))) -
-        (rack_col * BALL_PADDING) + GetRandomValue(0, BALL_PADDING / 2);
+        (rack_col * BALL_PADDING); // + GetRandomValue(0, BALL_PADDING / 2);
     float ball_y = rack_pos.y - (rack_col * BALL_RADIUS) +
-                   (ball_idx * (BALL_RADIUS * 2)) + (ball_idx * BALL_PADDING) -
-                   GetRandomValue(0, BALL_PADDING / 2);
+                   (ball_idx * (BALL_RADIUS * 2)) +
+                   (ball_idx * BALL_PADDING); //-
+    // GetRandomValue(0, BALL_PADDING / 2);
     balls[i].position = (Vector2){ball_x, ball_y};
     ball_idx += 1;
     if (ball_idx == rack_col) {
@@ -99,10 +105,10 @@ void apply_friction_to_ball(Ball *ball) {
   ball->velocity.x *= FRICTION;
   ball->velocity.y *= FRICTION;
 
-  if (fabs(ball->velocity.x) < FRICTION) {
+  if (fabs(ball->velocity.x) < min_velocity) {
     ball->velocity.x = 0;
   }
-  if (fabs(ball->velocity.y) < FRICTION) {
+  if (fabs(ball->velocity.y) < min_velocity) {
     ball->velocity.y = 0;
   }
 }
@@ -138,15 +144,35 @@ void update_ball_velocities(Ball *ball1, Ball *ball2) {
   ball2->velocity.y = ball2->velocity.y + p * ny;
 }
 
-void handle_ball_hit_wall(Ball *ball) {}
+void handle_ball_hit_wall(Ball *ball) {
+  bool collided_with_wall = false;
+
+  if (ball->position.x < 0 || ball->position.x > ScreenWidth) {
+    ball->velocity.x *= -1;
+    collided_with_wall = true;
+  }
+
+  if (ball->position.y < 0 || ball->position.y > ScreenHeight) {
+    ball->velocity.y *= -1;
+    collided_with_wall = true;
+  }
+
+  if (collided_with_wall) {
+    Clamp(ball->position.x, BALL_RADIUS, ScreenWidth - BALL_RADIUS);
+    Clamp(ball->position.y, BALL_RADIUS, ScreenHeight - BALL_RADIUS);
+  }
+}
 
 void step_physics_sim(Ball *balls, int num_balls) {
   // check if balls hit each other
-  // TODO: Maybe we are checking the same pairs multiple times?
+
   for (int i = 0; i < num_balls; i++) {
     balls[i].position.x += balls[i].velocity.x * SPEED;
     balls[i].position.y += balls[i].velocity.y * SPEED;
+    handle_ball_hit_wall(&balls[i]);
+  }
 
+  for (int i = 0; i < num_balls; i++) {
     for (int j = i + 1; j < num_balls; j++) {
       if (CheckCollisionCircles(balls[i].position, BALL_RADIUS,
                                 balls[j].position, BALL_RADIUS)) {
@@ -166,14 +192,11 @@ void step_physics_sim(Ball *balls, int num_balls) {
         balls[i].collision_handled = true;
       }
     }
-    handle_ball_hit_wall(&balls[i]);
   }
 
   for (int i = 0; i < num_balls; i++) {
     //   // try to friction the vels
     apply_friction_to_ball(&balls[i]);
-    //   balls[i].position.x += balls[i].velocity.x * SPEED;
-    //   balls[i].position.y += balls[i].velocity.y * SPEED;
   }
 }
 
@@ -205,7 +228,7 @@ int main(int argc, char *argv[]) {
     DrawText(mouse_pos_str, 0, 0, 30, BLACK);
 
     EndDrawing();
-    if (frame_cnt % 5 == 0)
+    if (frame_cnt % 1 == 0)
       step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
     frame_cnt++;
   }
