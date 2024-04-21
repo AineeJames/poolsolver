@@ -5,7 +5,7 @@
 
 #define BALL_RADIUS 25
 #define BALL_PADDING 3
-#define FRICTION 0.005
+#define FRICTION 0.99
 #define POCKET_RADIUS 50
 #define SPEED 0.03
 #define NUM_BALLS 16
@@ -41,9 +41,9 @@ void init_balls(Ball *balls) {
   balls[0].type = CUE_BALL;
   balls[0].color = WHITE;
   balls[0].number = -1;
-  balls[0].position = (Vector2){1230.0, 450.0};
+  balls[0].position = (Vector2){1230.0, 470.0};
   balls[0].pocketed = false;
-  balls[0].velocity.x = -240;
+  balls[0].velocity.x = -600;
   balls[0].velocity.y = -2;
 
   int rack_col = 1;
@@ -93,19 +93,33 @@ void draw_pool_table(Texture2D table_texture) {
 }
 
 void apply_friction_to_ball(Ball *ball) {
-  if (ball->velocity.x > 0) {
-    if (ball->velocity.x < FRICTION) {
-      ball->velocity.x = 0;
-    } else {
-      ball->velocity.x -= FRICTION;
-    }
-  } else {
-    if (ball->velocity.y > -FRICTION) {
-      ball->velocity.y = 0;
-    } else {
-      ball->velocity.y += FRICTION;
-    }
+  // need to get vector or something
+  // normalize vector and subtract negative friction
+  ball->velocity.x *= FRICTION;
+  ball->velocity.y *= FRICTION;
+
+  if (fabs(ball->velocity.x) < FRICTION) {
+    ball->velocity.x = 0;
   }
+  if (fabs(ball->velocity.y) < FRICTION) {
+    ball->velocity.y = 0;
+  }
+}
+
+void adjust_ball_position(Ball *ball1, Ball *ball2) {
+
+  //  double dx = ball1->position.x - ball2->position.x;
+  //  double dy = ball1->position.y - ball2->position.y;
+  double dx = ball2->position.x - ball2->position.x;
+  double dy = ball2->position.y - ball2->position.y;
+  double angle = atan2(dy, dx);
+  double center_x = ball1->position.x + 0.5 * dx;
+  double center_y = ball1->position.y + 0.5 * dy;
+  double radius = BALL_RADIUS;
+  ball1->position.x = center_x - (cos(angle) * radius);
+  ball1->position.y = center_y - (sin(angle) * radius);
+  ball2->position.x = center_x + (cos(angle) * radius);
+  ball2->position.y = center_y + (sin(angle) * radius);
 }
 
 void update_ball_velocities(Ball *ball1, Ball *ball2) {
@@ -127,21 +141,19 @@ void handle_ball_hit_wall(Ball *ball) {}
 
 void step_physics_sim(Ball *balls, int num_balls) {
   // check if balls hit each other
+  // TODO: Maybe we are checking the same pairs multiple times?
   for (int i = 0; i < num_balls; i++) {
-    Ball balls_stepped[NUM_BALLS] = {0};
-    memcpy(&balls_stepped[0], balls, sizeof(Ball) * NUM_BALLS);
-    balls_stepped[i].position.x += balls_stepped[i].velocity.x * SPEED;
-    balls_stepped[i].position.y += balls_stepped[i].velocity.y * SPEED;
+    balls[i].position.x += balls[i].velocity.x * SPEED;
+    balls[i].position.y += balls[i].velocity.y * SPEED;
 
     for (int j = 0; j < num_balls; j++) {
       if (i == j) {
         continue;
       }
-      if (CheckCollisionCircles(balls_stepped[i].position, BALL_RADIUS,
+      if (CheckCollisionCircles(balls[i].position, BALL_RADIUS,
                                 balls[j].position, BALL_RADIUS)) {
         update_ball_velocities(&balls[i], &balls[j]);
-      } else {
-        balls[i] = balls_stepped[i];
+        adjust_ball_position(&balls[i], &balls[j]);
       }
     }
   }
@@ -159,12 +171,12 @@ void step_physics_sim(Ball *balls, int num_balls) {
     handle_ball_hit_wall(&balls[i]);
   }
 
-  // for (int i = 0; i < num_balls; i++) {
-  //   // try to friction the vels
-  //   apply_friction_to_ball(&balls[i]);
-  //   balls[i].position.x += balls[i].velocity.x * SPEED;
-  //   balls[i].position.y += balls[i].velocity.y * SPEED;
-  // }
+  for (int i = 0; i < num_balls; i++) {
+    //   // try to friction the vels
+    apply_friction_to_ball(&balls[i]);
+    //   balls[i].position.x += balls[i].velocity.x * SPEED;
+    //   balls[i].position.y += balls[i].velocity.y * SPEED;
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -195,7 +207,8 @@ int main(int argc, char *argv[]) {
     DrawText(mouse_pos_str, 0, 0, 30, BLACK);
 
     EndDrawing();
-    if (frame_cnt % 10 == 0) step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
+    if (frame_cnt % 5 == 0)
+      step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
     frame_cnt++;
   }
   return EXIT_SUCCESS;
