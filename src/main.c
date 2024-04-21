@@ -1,5 +1,6 @@
 #include <math.h>
 #include <raylib.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -110,8 +111,8 @@ void adjust_ball_position(Ball *ball1, Ball *ball2) {
 
   //  double dx = ball1->position.x - ball2->position.x;
   //  double dy = ball1->position.y - ball2->position.y;
-  double dx = ball2->position.x - ball2->position.x;
-  double dy = ball2->position.y - ball2->position.y;
+  double dx = ball2->position.x - ball1->position.x;
+  double dy = ball2->position.y - ball1->position.y;
   double angle = atan2(dy, dx);
   double center_x = ball1->position.x + 0.5 * dx;
   double center_y = ball1->position.y + 0.5 * dy;
@@ -146,10 +147,7 @@ void step_physics_sim(Ball *balls, int num_balls) {
     balls[i].position.x += balls[i].velocity.x * SPEED;
     balls[i].position.y += balls[i].velocity.y * SPEED;
 
-    for (int j = 0; j < num_balls; j++) {
-      if (i == j) {
-        continue;
-      }
+    for (int j = i + 1; j < num_balls; j++) {
       if (CheckCollisionCircles(balls[i].position, BALL_RADIUS,
                                 balls[j].position, BALL_RADIUS)) {
         update_ball_velocities(&balls[i], &balls[j]);
