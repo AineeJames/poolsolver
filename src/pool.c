@@ -1,9 +1,9 @@
 #include "pool.h"
 #include <math.h>
+#include <pthread.h>
 #include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
-#include <threads.h>
 #include <time.h>
 
 void add_ball_path_point(Ball *ball) {
@@ -298,9 +298,8 @@ typedef struct {
   uint32_t best_balls_pocketed;
 } ThreadArg;
 
-#define NUM_THREADS 32
-
-int thread_func(void *arg) {
+// Thread function for POSIX threads
+void *thread_func(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
   Ball balls[NUM_BALLS] = {0};
   for (int i = thread_arg->start_sim; i < thread_arg->end_sim; i++) {
@@ -320,13 +319,14 @@ int thread_func(void *arg) {
       thread_arg->best_balls_pocketed = num_pocketed;
     }
   }
-  return 0;
+  return NULL;
 }
 
-Vector2 brute_force_threaded() {
-  const int sim_count = 100000;
+#define NUM_THREADS 16
+
+Vector2 brute_force_threaded(int sim_count) {
   int sims_per_thread = sim_count / NUM_THREADS;
-  thrd_t threads[NUM_THREADS];
+  pthread_t threads[NUM_THREADS];
   ThreadArg thread_args[NUM_THREADS];
   Vector2 cur_best_velocity = {0, 0};
   uint32_t best_balls_pocketed = 0;
@@ -338,8 +338,7 @@ Vector2 brute_force_threaded() {
     thread_args[i].end_sim = (i + 1) * sims_per_thread;
     thread_args[i].best_balls_pocketed = 0;
     thread_args[i].best_velocity = (Vector2){0, 0};
-    if (thrd_create(&threads[i], thread_func, &thread_args[i]) !=
-        thrd_success) {
+    if (pthread_create(&threads[i], NULL, thread_func, &thread_args[i]) != 0) {
       printf("Failed to create thread\n");
       return (Vector2){0, 0}; // Error handling
     }
@@ -347,15 +346,15 @@ Vector2 brute_force_threaded() {
 
   // Join threads
   for (int i = 0; i < NUM_THREADS; i++) {
-    thrd_join(threads[i], NULL);
+    pthread_join(threads[i], NULL);
     // Aggregate results
     if (thread_args[i].best_balls_pocketed > best_balls_pocketed) {
       best_balls_pocketed = thread_args[i].best_balls_pocketed;
       cur_best_velocity = thread_args[i].best_velocity;
     }
   }
-
   SetTraceLogLevel(LOG_INFO);
+
   printf("Best num pocketed was %d\n", best_balls_pocketed);
   return cur_best_velocity;
 }
