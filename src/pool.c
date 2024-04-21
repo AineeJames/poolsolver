@@ -9,6 +9,7 @@
 #include <raymath.h>
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
 
 void add_ball_path_point(Ball *ball) {
   if (ball->path_count == PATH_MAX - 1) {
@@ -308,6 +309,7 @@ typedef struct {
 void *thread_func(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
   Ball balls[NUM_BALLS] = {0};
+  SetRandomSeed(time(NULL));
   for (int i = thread_arg->start_sim; i < thread_arg->end_sim; i++) {
     Vector2 cur_velocity = {GetRandomValue(-200, -10),
                             GetRandomValue(-200, 200)};
@@ -335,6 +337,7 @@ Vector2 brute_force_threaded(int sim_count) {
   printf("Brute forcing %d shots for best with %d threads\n", sim_count,
          NUM_THREADS);
   int sims_per_thread = sim_count / NUM_THREADS;
+  printf("INFO: Sims per thread = %d!\n", sims_per_thread);
   pthread_t threads[NUM_THREADS];
   ThreadArg thread_args[NUM_THREADS];
   Vector2 cur_best_velocity = {0, 0};

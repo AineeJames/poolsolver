@@ -2,7 +2,7 @@ BINARY_NAME="pool_sim"
 
 CFLAGS="-O3 -Werror -Wall -pthread -fsanitize=address -fsanitize=undefined $(pkg-config --cflags raylib)"
 #CFLAGS="-O3 -Werror -Wall $(pkg-config --cflags raylib)"
-LIBS="-lm $(pkg-config --libs raylib)"
+LIBS="-lm -lpthread $(pkg-config --libs raylib)"
 
 if [[ "$1" = "prod" ]]; then
 	echo "Building for production!"

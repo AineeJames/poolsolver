@@ -80,9 +80,6 @@ int main(int argc, char *argv[]) {
     num_sims = atoi(argv[1]);
   }
 
-  SetTargetFPS(60);
-  InitWindow(1700, 900, "Pool Sim");
-
   Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
 // benchmark_physics_sim();
@@ -93,8 +90,10 @@ int main(int argc, char *argv[]) {
 #endif
   balls[0].velocity = optimal_velocity;
 
+  SetTraceLogLevel(LOG_ERROR);
+  InitWindow(1700, 900, "Pool Sim");
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
-
+  SetTargetFPS(60);
   while (!WindowShouldClose()) {
 
     if (IsKeyPressed(KEY_SPACE)) {
