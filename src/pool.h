@@ -72,6 +72,6 @@ void init_balls(Ball *balls);
 void benchmark_physics_sim();
 void step_physics_sim(Ball *balls, int num_balls);
 bool is_sim_at_rest(Ball *balls);
-Vector2 brute_force();
+Vector2 brute_force(int num_sims);
 
 #endif

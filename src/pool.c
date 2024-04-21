@@ -258,15 +258,14 @@ uint32_t count_balls_pocketed(Ball *balls) {
 bool is_cue_pocketed(Ball *balls) { return balls[0].pocketed; }
 
 // returns optimal velocity for cue ball
-Vector2 brute_force() {
+Vector2 brute_force(int num_sims) {
   Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
-  const int sim_count = 100000;
   Vector2 cur_best_velocity = {0, 0};
   uint32_t best_balls_pocketed = 0;
 
   SetTraceLogLevel(LOG_FATAL);
-  for (int i = 0; i < sim_count; i++) {
+  for (int i = 0; i < num_sims; i++) {
     Vector2 cur_velocity =
         (Vector2){GetRandomValue(-200, 200), GetRandomValue(-200, 200)};
     init_balls(&balls[0]);

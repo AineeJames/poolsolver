@@ -1,6 +1,7 @@
 #include "pool.h"
 #include <raylib.h>
 #include <raymath.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 void draw_pool_table(Texture2D table_texture) {
@@ -74,13 +75,21 @@ void trace_paths(Ball *balls) {
 }
 
 int main(int argc, char *argv[]) {
+
+  if (argc < 2) {
+    fprintf(stderr, "ERROR: Not enough arguments provided!\n");
+    printf("Usage: %s <num-sims>\n", argv[0]);
+    return EXIT_FAILURE;
+  }
+  int num_sims = atoi(argv[1]);
+
   SetTargetFPS(60);
   InitWindow(1700, 900, "Pool Sim");
 
   Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
   // benchmark_physics_sim();
-  Vector2 optimal_velocity = brute_force();
+  Vector2 optimal_velocity = brute_force(num_sims);
   balls[0].velocity = optimal_velocity;
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
