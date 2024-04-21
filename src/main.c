@@ -78,13 +78,10 @@ int main(int argc, char *argv[]) {
 
   if (argc < 2) {
     fprintf(stderr, "ERROR: Not enough arguments provided!\n");
-    printf("Usage: %s <num-sims>\n", argv[0]);
+    printf("Usage: %s <num_sims>\n", argv[0]);
     return EXIT_FAILURE;
   }
   int num_sims = atoi(argv[1]);
-
-  SetTargetFPS(60);
-  InitWindow(1700, 900, "Pool Sim");
 
   Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
@@ -92,8 +89,10 @@ int main(int argc, char *argv[]) {
   Vector2 optimal_velocity = brute_force_threaded(num_sims);
   balls[0].velocity = optimal_velocity;
 
+  SetTraceLogLevel(LOG_ERROR);
+  InitWindow(1700, 900, "Pool Sim");
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
-
+  SetTargetFPS(60);
   while (!WindowShouldClose()) {
 
     if (IsKeyPressed(KEY_SPACE)) {
