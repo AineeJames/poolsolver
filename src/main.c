@@ -59,8 +59,22 @@ void draw_borders() {
   }
 }
 
+void trace_paths(Ball *balls) {
+
+  for (int i = 0; i < NUM_BALLS; i++) {
+    // draw the path for a ball
+    if (balls[i].path_count < PATH_MAX - 1) {
+      balls[i].path[balls[i].path_count + 1] = balls[i].position;
+      DrawLineStrip(balls[i].path, balls[i].path_count + 1, balls[i].color);
+    } else {
+
+      DrawLineStrip(balls[i].path, balls[i].path_count, balls[i].color);
+    }
+  }
+}
+
 int main(int argc, char *argv[]) {
-  SetTargetFPS(2000);
+  SetTargetFPS(60);
   InitWindow(1700, 900, "Pool Sim");
 
   Ball balls[NUM_BALLS] = {0};
@@ -87,13 +101,14 @@ int main(int argc, char *argv[]) {
         TextFormat("Pos = %d,%d\n", (int)mouse_pos.x, (int)mouse_pos.y);
     DrawText(mouse_pos_str, 0, 0, 30, BLACK);
 
+    trace_paths(&balls[0]);
     EndDrawing();
     step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
     if (is_sim_at_rest(&balls[0])) {
       // randomize veloicity of cue ball and shoot again
       init_balls(&balls[0]);
       balls[0].velocity =
-          (Vector2){GetRandomValue(-2000, 2000), GetRandomValue(-2000, 2000)};
+          (Vector2){GetRandomValue(-60, 60), GetRandomValue(-60, 60)};
     }
   }
   return EXIT_SUCCESS;

@@ -1,6 +1,7 @@
 #ifndef POOL_H
 #define POOL_H
 #include <raylib.h>
+#include <stdint.h>
 
 #define BALL_RADIUS 25
 #define BALL_PADDING 3
@@ -9,6 +10,8 @@
 #define POCKET_IGNORE_RADIUS 40
 #define SPEED 0.03
 #define NUM_BALLS 16
+
+#define PATH_MAX 100
 
 static const Vector2 pocket_vecs[6] = {
     {80.0, 73.0},    // top left
@@ -61,6 +64,8 @@ typedef struct Ball {
   Vector2 velocity;
   bool collision_handled;
   bool pocketed;
+  Vector2 path[PATH_MAX];
+  uint32_t path_count;
 } Ball;
 
 void init_balls(Ball *balls);

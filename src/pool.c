@@ -5,6 +5,14 @@
 #include <stdio.h>
 #include <time.h>
 
+void add_ball_path_point(Ball *ball) {
+  if (ball->path_count == PATH_MAX - 1) {
+    return;
+  }
+  // printf("current index being saved in path is %d\n", ball->path_count);
+  ball->path[ball->path_count++] = ball->position;
+}
+
 void init_balls(Ball *balls) {
 
   Vector2 rack_pos = (Vector2){470.0, 450.0};
@@ -14,8 +22,10 @@ void init_balls(Ball *balls) {
   balls[0].number = -1;
   balls[0].position = (Vector2){1230.0, 470.0};
   balls[0].pocketed = false;
-  balls[0].velocity.x = -2000;
-  balls[0].velocity.y = -20;
+  balls[0].velocity.x = -200;
+  balls[0].velocity.y = -2;
+  balls[0].path_count = 0;
+  add_ball_path_point(&balls[0]);
 
   int rack_col = 1;
   int ball_idx = 0;
@@ -44,6 +54,8 @@ void init_balls(Ball *balls) {
     }
     balls[i].pocketed = false;
     balls[i].velocity = (Vector2){0};
+    balls[i].path_count = 0;
+    add_ball_path_point(&balls[i]);
   }
   TraceLog(LOG_INFO, "Initialized the balls");
 }
@@ -62,6 +74,9 @@ void apply_friction_to_ball(Ball *ball) {
   }
   if (fabs(ball->velocity.y) < min_velocity) {
     ball->velocity.y = 0;
+  }
+  if (ball->velocity.y == 0 && ball->velocity.x == 0) {
+    add_ball_path_point(ball);
   }
 }
 
@@ -97,8 +112,7 @@ void update_ball_velocities(Ball *ball1, Ball *ball2) {
 }
 
 void handle_ball_hit_wall(Ball *ball) {
-  // TODO: Need to change wall collisions to
-  // allow ball to go in all holes
+
   bool collided_with_wall = false;
 
   // need to go through all of the walls and see if
@@ -135,10 +149,12 @@ void handle_ball_hit_wall(Ball *ball) {
   }
 
   if (collided_with_wall) {
-    Clamp(ball->position.x, BALL_RADIUS + TableBorder,
-          ScreenWidth - TableBorder - BALL_RADIUS);
-    Clamp(ball->position.y, BALL_RADIUS + TableBorder,
-          ScreenHeight - TableBorder - BALL_RADIUS);
+    add_ball_path_point(ball);
+    ball->position.x =
+        Clamp(ball->position.x, TableBorder, ScreenWidth - TableBorder);
+
+    ball->position.y =
+        Clamp(ball->position.y, TableBorder, ScreenHeight - TableBorder);
   }
 }
 
@@ -146,8 +162,8 @@ void step_physics_sim(Ball *balls, int num_balls) {
   // check if balls hit each other
 
   for (int i = 0; i < num_balls; i++) {
-    balls[i].position.x += balls[i].velocity.x * SPEED;
-    balls[i].position.y += balls[i].velocity.y * SPEED;
+    balls[i].position.x += balls[i].velocity.x;
+    balls[i].position.y += balls[i].velocity.y;
     handle_ball_hit_wall(&balls[i]);
   }
 
@@ -160,6 +176,8 @@ void step_physics_sim(Ball *balls, int num_balls) {
                                 balls[j].position, BALL_RADIUS)) {
         update_ball_velocities(&balls[i], &balls[j]);
         adjust_ball_position(&balls[i], &balls[j]);
+        add_ball_path_point(&balls[i]);
+        add_ball_path_point(&balls[j]);
       }
     }
   }
@@ -172,6 +190,7 @@ void step_physics_sim(Ball *balls, int num_balls) {
         balls[i].pocketed = true;
         balls[i].velocity = (Vector2){0, 0};
         balls[i].collision_handled = true;
+        add_ball_path_point(&balls[i]);
       }
     }
   }
