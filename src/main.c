@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define BALL_RADIUS 25
 #define BALL_PADDING 3
@@ -200,12 +201,40 @@ void step_physics_sim(Ball *balls, int num_balls) {
   }
 }
 
+void benchmark_physics_sim() {
+
+  Ball balls[NUM_BALLS] = {0};
+  init_balls(&balls[0]);
+  size_t step_count = 0;
+  clock_t start_time = clock(); // Start timing
+
+  // Duration for the benchmark, in seconds
+  double benchmark_duration = 0.25; // Run the benchmark for 1 second
+
+  // Calculate the end time based on the desired duration
+  clock_t end_time =
+      start_time + (clock_t)(benchmark_duration * CLOCKS_PER_SEC);
+
+  while (clock() < end_time) {
+    step_physics_sim(&balls[0], NUM_BALLS);
+    step_count++;
+  }
+
+  clock_t finish_time = clock(); // End timing
+  double elapsed_time = (double)(finish_time - start_time) / CLOCKS_PER_SEC;
+
+  printf("Completed %zu physics steps in %.2f seconds.\n", step_count,
+         elapsed_time);
+  printf("Steps per second: %.2f\n", step_count / elapsed_time);
+}
+
 int main(int argc, char *argv[]) {
   SetTargetFPS(60);
   InitWindow(1700, 900, "Pool Sim");
 
   Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
+  benchmark_physics_sim();
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
 
