@@ -118,12 +118,12 @@ void adjust_ball_position(Ball *ball1, Ball *ball2) {
 
   //  double dx = ball1->position.x - ball2->position.x;
   //  double dy = ball1->position.y - ball2->position.y;
-  double dx = ball2->position.x - ball1->position.x;
-  double dy = ball2->position.y - ball1->position.y;
-  double angle = atan2(dy, dx);
-  double center_x = ball1->position.x + 0.5 * dx;
-  double center_y = ball1->position.y + 0.5 * dy;
-  double radius = BALL_RADIUS;
+  float dx = ball2->position.x - ball1->position.x;
+  float dy = ball2->position.y - ball1->position.y;
+  float angle = atan2(dy, dx);
+  float center_x = ball1->position.x + 0.5 * dx;
+  float center_y = ball1->position.y + 0.5 * dy;
+  float radius = BALL_RADIUS;
   ball1->position.x = center_x - (cos(angle) * radius);
   ball1->position.y = center_y - (sin(angle) * radius);
   ball2->position.x = center_x + (cos(angle) * radius);
@@ -131,14 +131,14 @@ void adjust_ball_position(Ball *ball1, Ball *ball2) {
 }
 
 void update_ball_velocities(Ball *ball1, Ball *ball2) {
-  double distance = sqrtf(pow(ball1->position.x - ball2->position.x, 2) +
-                          pow(ball1->position.y - ball2->position.y, 2));
+  float distance = sqrtf(pow(ball1->position.x - ball2->position.x, 2) +
+                         pow(ball1->position.y - ball2->position.y, 2));
 
-  double nx = (ball2->position.x - ball1->position.x) / distance;
-  double ny = (ball2->position.y - ball1->position.y) / distance;
+  float nx = (ball2->position.x - ball1->position.x) / distance;
+  float ny = (ball2->position.y - ball1->position.y) / distance;
 
-  double p = (ball1->velocity.x * nx + ball1->velocity.y * ny -
-              ball2->velocity.x * nx - ball2->velocity.y * ny);
+  float p = (ball1->velocity.x * nx + ball1->velocity.y * ny -
+             ball2->velocity.x * nx - ball2->velocity.y * ny);
   ball1->velocity.x = ball1->velocity.x - p * nx;
   ball1->velocity.y = ball1->velocity.y - p * ny;
   ball2->velocity.x = ball2->velocity.x + p * nx;
@@ -175,6 +175,9 @@ void step_physics_sim(Ball *balls, int num_balls) {
 
   for (int i = 0; i < num_balls; i++) {
     for (int j = i + 1; j < num_balls; j++) {
+      if (balls[i].pocketed || balls[j].pocketed) {
+        continue;
+      }
       if (CheckCollisionCircles(balls[i].position, BALL_RADIUS,
                                 balls[j].position, BALL_RADIUS)) {
         update_ball_velocities(&balls[i], &balls[j]);

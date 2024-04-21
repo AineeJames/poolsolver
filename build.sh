@@ -1,5 +1,7 @@
 BINARY_NAME="pool_sim"
-CFLAGS="-Werror -Wall -fsanitize=address -fsanitize=undefined $(pkg-config --cflags raylib)"
+
+#CFLAGS="-O3 -Werror -Wall -fsanitize=address -fsanitize=undefined $(pkg-config --cflags raylib)"
+CFLAGS="-O3 -Werror -Wall $(pkg-config --cflags raylib)"
 LIBS="-lm $(pkg-config --libs raylib)"
 
 clang $CFLAGS src/*c -o $BINARY_NAME $LIBS
