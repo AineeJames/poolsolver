@@ -78,3 +78,5 @@ Vector2 brute_force_threaded(int num_sims);
 Vector2 brute_force(int num_sims);
 
 #endif
+
+Vector2 random_velocity_in_degree_range(int min_degree, int max_degree);

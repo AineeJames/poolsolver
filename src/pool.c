@@ -8,6 +8,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -263,6 +264,24 @@ uint32_t count_balls_pocketed(Ball *balls) {
 
 bool is_cue_pocketed(Ball *balls) { return balls[0].pocketed; }
 
+Vector2 random_velocity_in_degree_range(int min_degree, int max_degree) {
+  // Generate a random degree between 0 and 360
+  float angle_degrees = GetRandomValue(min_degree, max_degree);
+  // Convert angle to radians
+  float angle_radians = angle_degrees * (M_PI / 180.0f);
+
+  // Generate a random power between 10 and 200
+  float power = GetRandomValue(10, 100);
+
+  // Convert polar coordinates (angle, power) to Cartesian coordinates (vx,
+  // vy)
+  Vector2 cur_velocity = {
+      cos(angle_radians) * power, // vx
+      sin(angle_radians) * power  // vy
+  };
+  return cur_velocity;
+}
+
 // returns optimal velocity for cue ball
 Vector2 brute_force(int num_sims) {
   printf("Brute forcing optimal shot from %d random shots\n", num_sims);
@@ -273,8 +292,7 @@ Vector2 brute_force(int num_sims) {
 
   SetTraceLogLevel(LOG_FATAL);
   for (int i = 0; i < num_sims; i++) {
-    Vector2 cur_velocity =
-        (Vector2){GetRandomValue(-200, 200), GetRandomValue(-200, 200)};
+    Vector2 cur_velocity = random_velocity_in_degree_range(160, 200);
     init_balls(&balls[0]);
     balls[0].velocity = cur_velocity;
     size_t step_count = 0;
@@ -311,8 +329,8 @@ void *thread_func(void *arg) {
   Ball balls[NUM_BALLS] = {0};
   SetRandomSeed(time(NULL));
   for (int i = thread_arg->start_sim; i < thread_arg->end_sim; i++) {
-    Vector2 cur_velocity = {GetRandomValue(-200, -10),
-                            GetRandomValue(-200, 200)};
+
+    Vector2 cur_velocity = random_velocity_in_degree_range(160, 200);
     init_balls(balls);
     balls[0].velocity = cur_velocity;
     size_t step_count = 0;
@@ -336,6 +354,12 @@ void *thread_func(void *arg) {
 Vector2 brute_force_threaded(int sim_count) {
   printf("Brute forcing %d shots for best with %d threads\n", sim_count,
          NUM_THREADS);
+
+  struct timeval timecheck;
+
+  gettimeofday(&timecheck, NULL);
+  long start = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
+
   int sims_per_thread = sim_count / NUM_THREADS;
   printf("INFO: Sims per thread = %d!\n", sims_per_thread);
   pthread_t threads[NUM_THREADS];
@@ -366,6 +390,14 @@ Vector2 brute_force_threaded(int sim_count) {
     }
   }
   SetTraceLogLevel(LOG_INFO);
+  gettimeofday(&timecheck, NULL);
+  long end = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
+
+  long elapsed_time = end - start;
+
+  printf("Completed %d games in %ld milliseconds.\n", sim_count, elapsed_time);
+  printf("Sims per second: %.2f\n",
+         (float)sim_count / ((float)elapsed_time / 1000));
 
   printf("Best num pocketed was %d\n", best_balls_pocketed);
   return cur_best_velocity;

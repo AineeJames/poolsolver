@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
   SetTargetFPS(60);
   while (!WindowShouldClose()) {
 
-    if (IsKeyPressed(KEY_SPACE)) {
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
       init_balls(&balls[0]);
       balls[0].velocity = optimal_velocity;
     }
@@ -121,8 +121,7 @@ int main(int argc, char *argv[]) {
     if (is_sim_at_rest(&balls[0])) {
       // randomize veloicity of cue ball and shoot again
       init_balls(&balls[0]);
-      balls[0].velocity =
-          (Vector2){GetRandomValue(-60, 60), GetRandomValue(-60, 60)};
+      balls[0].velocity = random_velocity_in_degree_range(160, 200);
     }
   }
   return EXIT_SUCCESS;
