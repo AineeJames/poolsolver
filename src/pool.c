@@ -3,6 +3,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
+#include <threads.h>
 #include <time.h>
 
 void add_ball_path_point(Ball *ball) {
@@ -285,6 +286,76 @@ Vector2 brute_force() {
       printf("currently at sim_count %d \n", i);
     }
   }
+  SetTraceLogLevel(LOG_INFO);
+  printf("Best num pocketed was %d\n", best_balls_pocketed);
+  return cur_best_velocity;
+}
+
+// Thread function argument structure
+typedef struct {
+  int start_sim;
+  int end_sim;
+  Vector2 best_velocity;
+  uint32_t best_balls_pocketed;
+} ThreadArg;
+
+#define NUM_THREADS 32
+
+int thread_func(void *arg) {
+  ThreadArg *thread_arg = (ThreadArg *)arg;
+  Ball balls[NUM_BALLS] = {0};
+  for (int i = thread_arg->start_sim; i < thread_arg->end_sim; i++) {
+    Vector2 cur_velocity = {GetRandomValue(-200, 200),
+                            GetRandomValue(-200, 200)};
+    init_balls(balls);
+    balls[0].velocity = cur_velocity;
+    size_t step_count = 0;
+    while (!is_sim_at_rest(balls) && step_count < 40000) {
+      step_physics_sim(balls, NUM_BALLS);
+      step_count++;
+    }
+    uint32_t num_pocketed = count_balls_pocketed(balls);
+    if (!is_cue_pocketed(balls) &&
+        num_pocketed > thread_arg->best_balls_pocketed) {
+      thread_arg->best_velocity = cur_velocity;
+      thread_arg->best_balls_pocketed = num_pocketed;
+    }
+  }
+  return 0;
+}
+
+Vector2 brute_force_threaded() {
+  const int sim_count = 100000;
+  int sims_per_thread = sim_count / NUM_THREADS;
+  thrd_t threads[NUM_THREADS];
+  ThreadArg thread_args[NUM_THREADS];
+  Vector2 cur_best_velocity = {0, 0};
+  uint32_t best_balls_pocketed = 0;
+
+  SetTraceLogLevel(LOG_FATAL);
+  // Create threads
+  for (int i = 0; i < NUM_THREADS; i++) {
+    thread_args[i].start_sim = i * sims_per_thread;
+    thread_args[i].end_sim = (i + 1) * sims_per_thread;
+    thread_args[i].best_balls_pocketed = 0;
+    thread_args[i].best_velocity = (Vector2){0, 0};
+    if (thrd_create(&threads[i], thread_func, &thread_args[i]) !=
+        thrd_success) {
+      printf("Failed to create thread\n");
+      return (Vector2){0, 0}; // Error handling
+    }
+  }
+
+  // Join threads
+  for (int i = 0; i < NUM_THREADS; i++) {
+    thrd_join(threads[i], NULL);
+    // Aggregate results
+    if (thread_args[i].best_balls_pocketed > best_balls_pocketed) {
+      best_balls_pocketed = thread_args[i].best_balls_pocketed;
+      cur_best_velocity = thread_args[i].best_velocity;
+    }
+  }
+
   SetTraceLogLevel(LOG_INFO);
   printf("Best num pocketed was %d\n", best_balls_pocketed);
   return cur_best_velocity;

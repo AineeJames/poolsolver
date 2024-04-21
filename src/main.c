@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
   // benchmark_physics_sim();
-  Vector2 optimal_velocity = brute_force();
+  Vector2 optimal_velocity = brute_force_threaded();
   balls[0].velocity = optimal_velocity;
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
@@ -96,9 +96,9 @@ int main(int argc, char *argv[]) {
     // DrawPoolTable
     draw_pool_table(table_texture);
     draw_pockets_debug();
-    #ifndef DONT_DRAW_PATHS
+#ifndef DONT_DRAW_PATHS
     trace_paths(&balls[0]);
-    #endif
+#endif
     draw_balls(balls);
     draw_borders();
 
