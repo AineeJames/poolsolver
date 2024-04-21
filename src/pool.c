@@ -1,6 +1,10 @@
 #include "pool.h"
 #include <math.h>
+
+#ifndef NO_THREADS
 #include <pthread.h>
+#endif
+
 #include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
@@ -21,7 +25,7 @@ void init_balls(Ball *balls) {
   balls[0].type = CUE_BALL;
   balls[0].color = WHITE;
   balls[0].number = -1;
-  balls[0].position = (Vector2){1230.0, 470.0};
+  balls[0].position = (Vector2){1230.0, 460.0};
   balls[0].pocketed = false;
   balls[0].velocity.x = -200;
   balls[0].velocity.y = -2;
@@ -150,12 +154,12 @@ void handle_ball_hit_wall(Ball *ball) {
   }
 
   if (collided_with_wall) {
-    add_ball_path_point(ball);
     ball->position.x =
         Clamp(ball->position.x, TableBorder, ScreenWidth - TableBorder);
 
     ball->position.y =
         Clamp(ball->position.y, TableBorder, ScreenHeight - TableBorder);
+    add_ball_path_point(ball);
   }
 }
 
@@ -260,6 +264,7 @@ bool is_cue_pocketed(Ball *balls) { return balls[0].pocketed; }
 
 // returns optimal velocity for cue ball
 Vector2 brute_force(int num_sims) {
+  printf("Brute forcing optimal shot from %d random shots\n", num_sims);
   Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
   Vector2 cur_best_velocity = {0, 0};
@@ -290,6 +295,7 @@ Vector2 brute_force(int num_sims) {
   return cur_best_velocity;
 }
 
+#ifndef NO_THREADS
 // Thread function argument structure
 typedef struct {
   int start_sim;
@@ -303,12 +309,13 @@ void *thread_func(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
   Ball balls[NUM_BALLS] = {0};
   for (int i = thread_arg->start_sim; i < thread_arg->end_sim; i++) {
-    Vector2 cur_velocity = {GetRandomValue(-200, 200),
+    Vector2 cur_velocity = {GetRandomValue(-200, -10),
                             GetRandomValue(-200, 200)};
     init_balls(balls);
     balls[0].velocity = cur_velocity;
     size_t step_count = 0;
-    while (!is_sim_at_rest(balls) && step_count < 40000) {
+    while (!is_sim_at_rest(balls) && step_count < 40000 &&
+           !is_cue_pocketed(balls)) {
       step_physics_sim(balls, NUM_BALLS);
       step_count++;
     }
@@ -325,6 +332,8 @@ void *thread_func(void *arg) {
 #define NUM_THREADS 16
 
 Vector2 brute_force_threaded(int sim_count) {
+  printf("Brute forcing %d shots for best with %d threads\n", sim_count,
+         NUM_THREADS);
   int sims_per_thread = sim_count / NUM_THREADS;
   pthread_t threads[NUM_THREADS];
   ThreadArg thread_args[NUM_THREADS];
@@ -358,3 +367,4 @@ Vector2 brute_force_threaded(int sim_count) {
   printf("Best num pocketed was %d\n", best_balls_pocketed);
   return cur_best_velocity;
 }
+#endif

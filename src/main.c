@@ -75,21 +75,22 @@ void trace_paths(Ball *balls) {
 }
 
 int main(int argc, char *argv[]) {
-
-  if (argc < 2) {
-    fprintf(stderr, "ERROR: Not enough arguments provided!\n");
-    printf("Usage: %s <num-sims>\n", argv[0]);
-    return EXIT_FAILURE;
+  int num_sims = 10000;
+  if (argc > 1) {
+    num_sims = atoi(argv[1]);
   }
-  int num_sims = atoi(argv[1]);
 
   SetTargetFPS(60);
   InitWindow(1700, 900, "Pool Sim");
 
   Ball balls[NUM_BALLS] = {0};
   init_balls(&balls[0]);
-  // benchmark_physics_sim();
+// benchmark_physics_sim();
+#ifndef NO_THREADS
   Vector2 optimal_velocity = brute_force_threaded(num_sims);
+#else
+  Vector2 optimal_velocity = brute_force(num_sims);
+#endif
   balls[0].velocity = optimal_velocity;
 
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
