@@ -93,6 +93,9 @@ int main(int argc, char *argv[]) {
     // DrawPoolTable
     draw_pool_table(table_texture);
     draw_pockets_debug();
+    #ifndef DONT_DRAW_PATHS
+    trace_paths(&balls[0]);
+    #endif
     draw_balls(balls);
     draw_borders();
 
@@ -101,7 +104,6 @@ int main(int argc, char *argv[]) {
         TextFormat("Pos = %d,%d\n", (int)mouse_pos.x, (int)mouse_pos.y);
     DrawText(mouse_pos_str, 0, 0, 30, BLACK);
 
-    trace_paths(&balls[0]);
     EndDrawing();
     step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
     if (is_sim_at_rest(&balls[0])) {

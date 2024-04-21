@@ -4,6 +4,13 @@ CFLAGS="-O3 -Werror -Wall -fsanitize=address -fsanitize=undefined $(pkg-config -
 #CFLAGS="-O3 -Werror -Wall $(pkg-config --cflags raylib)"
 LIBS="-lm $(pkg-config --libs raylib)"
 
+if [[ "$1" = "prod" ]]; then
+	echo "Building for production!"
+	CFLAGS="-D DONT_DRAW_PATHS $CFLAGS"
+	echo $CFLAGS
+	shift
+fi
+
 clang $CFLAGS src/*c -o $BINARY_NAME $LIBS
 
 if [[ $? == 0 ]]; then
