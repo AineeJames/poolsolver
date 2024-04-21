@@ -244,3 +244,48 @@ void benchmark_physics_sim() {
          step_count, sim_count, elapsed_time);
   printf("Steps per second: %.2f\n", step_count / elapsed_time);
 }
+
+uint32_t count_balls_pocketed(Ball *balls) {
+  uint32_t pocket_count = 0;
+  for (int i = 0; i < NUM_BALLS; i++) {
+    if (balls[i].pocketed) {
+      pocket_count++;
+    }
+  }
+  return pocket_count;
+}
+
+bool is_cue_pocketed(Ball *balls) { return balls[0].pocketed; }
+
+// returns optimal velocity for cue ball
+Vector2 brute_force() {
+  Ball balls[NUM_BALLS] = {0};
+  init_balls(&balls[0]);
+  const int sim_count = 100000;
+  Vector2 cur_best_velocity = {0, 0};
+  uint32_t best_balls_pocketed = 0;
+
+  SetTraceLogLevel(LOG_FATAL);
+  for (int i = 0; i < sim_count; i++) {
+    Vector2 cur_velocity =
+        (Vector2){GetRandomValue(-200, 200), GetRandomValue(-200, 200)};
+    init_balls(&balls[0]);
+    balls[0].velocity = cur_velocity;
+    size_t step_count = 0;
+    while (!is_sim_at_rest(&balls[0]) && step_count < 40000) {
+      step_physics_sim(&balls[0], NUM_BALLS);
+      step_count++;
+    }
+    uint32_t num_pocketed = count_balls_pocketed(&balls[0]);
+    if (!is_cue_pocketed(&balls[0]) && num_pocketed > best_balls_pocketed) {
+      cur_best_velocity = cur_velocity;
+      best_balls_pocketed = num_pocketed;
+    }
+    if (i % 1000 == 0) {
+      printf("currently at sim_count %d \n", i);
+    }
+  }
+  SetTraceLogLevel(LOG_INFO);
+  printf("Best num pocketed was %d\n", best_balls_pocketed);
+  return cur_best_velocity;
+}
