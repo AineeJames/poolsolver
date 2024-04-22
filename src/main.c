@@ -45,6 +45,7 @@ void draw_balls(Ball balls[NUM_BALLS]) {
 }
 
 void draw_borders() {
+  return;
   for (int i = 0; i < sizeof(border_collisions) / sizeof(border_collisions[0]);
        i++) {
     if (border_collisions[i].is_horiz) {
@@ -81,19 +82,19 @@ int main(int argc, char *argv[]) {
   }
 
   Ball balls[NUM_BALLS] = {0};
-  init_balls(&balls[0]);
 // benchmark_physics_sim();
 #ifndef NO_THREADS
   Vector2 optimal_velocity = brute_force_threaded(num_sims);
 #else
   Vector2 optimal_velocity = brute_force(num_sims);
 #endif
+  init_balls(&balls[0]);
   balls[0].velocity = optimal_velocity;
 
   SetTraceLogLevel(LOG_ERROR);
   InitWindow(1700, 900, "Pool Sim");
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
-  SetTargetFPS(60);
+  SetTargetFPS(120);
   while (!WindowShouldClose()) {
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
