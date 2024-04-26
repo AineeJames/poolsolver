@@ -76,10 +76,9 @@ void apply_friction_to_ball(Ball *ball) {
   ball->velocity.x *= FRICTION;
   ball->velocity.y *= FRICTION;
 
-  if (fabs(ball->velocity.x) < min_velocity) {
+  if (sqrtf(ball->velocity.x * ball->velocity.x +
+            ball->velocity.y * ball->velocity.y) < min_velocity) {
     ball->velocity.x = 0;
-  }
-  if (fabs(ball->velocity.y) < min_velocity) {
     ball->velocity.y = 0;
   }
   if (ball->velocity.y == 0 && ball->velocity.x == 0) {
