@@ -1,6 +1,7 @@
 #ifndef POOL_H
 #define POOL_H
 #include <raylib.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #define BALL_RADIUS 25
@@ -64,14 +65,24 @@ typedef struct Ball {
   Vector2 velocity;
   bool collision_handled;
   bool pocketed;
+  uint32_t step_count_pocketed;
   Vector2 path[PATH_MAX];
   uint32_t path_count;
 } Ball;
 
+typedef struct {
+  size_t length;
+  size_t capacity;
+  Vector2 *velocities;
+} MoveList;
+
 void init_balls(Ball *balls);
 void benchmark_physics_sim();
-void step_physics_sim(Ball *balls, int num_balls);
+void step_physics_sim(Ball *balls, int num_balls, uint32_t cur_step_count);
 bool is_sim_at_rest(Ball *balls);
+void clear_ball_paths(Ball *balls);
+
+MoveList find_perfect_game();
 #ifndef NO_THREADS
 Vector2 brute_force_threaded(int num_sims);
 #endif

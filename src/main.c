@@ -84,12 +84,15 @@ int main(int argc, char *argv[]) {
   Ball balls[NUM_BALLS] = {0};
 // benchmark_physics_sim();
 #ifndef NO_THREADS
-  Vector2 optimal_velocity = brute_force_threaded(num_sims);
+  brute_force_threaded(num_sims);
 #else
-  Vector2 optimal_velocity = brute_force(num_sims);
+  brute_force(num_sims);
 #endif
+  MoveList optimal_game_moves = find_perfect_game();
   init_balls(&balls[0]);
-  balls[0].velocity = optimal_velocity;
+  balls[0].velocity = optimal_game_moves.velocities[0]; // optimal_velocity;
+  uint32_t optimal_game_move_idx = 1;
+  uint32_t sim_step_count = 0;
 
   SetTraceLogLevel(LOG_ERROR);
   InitWindow(1700, 900, "Pool Sim");
@@ -99,7 +102,8 @@ int main(int argc, char *argv[]) {
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
       init_balls(&balls[0]);
-      balls[0].velocity = optimal_velocity;
+      balls[0].velocity = optimal_game_moves.velocities[0];
+      optimal_game_move_idx = 1;
     }
 
     BeginDrawing();
@@ -118,11 +122,16 @@ int main(int argc, char *argv[]) {
     DrawText(mouse_pos_str, 0, 0, 30, BLACK);
 
     EndDrawing();
-    step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]));
-    if (is_sim_at_rest(&balls[0])) {
+    step_physics_sim(&balls[0], sizeof(balls) / sizeof(balls[0]),
+                     sim_step_count);
+
+    if (is_sim_at_rest(&balls[0]) &&
+        optimal_game_move_idx < optimal_game_moves.length) {
       // randomize veloicity of cue ball and shoot again
-      init_balls(&balls[0]);
-      balls[0].velocity = random_velocity_in_degree_range(160, 200);
+      balls[0].velocity =
+          optimal_game_moves.velocities[optimal_game_move_idx++];
+      // need to clear ball_paths?
+      clear_ball_paths(&balls[0]);
     }
   }
   return EXIT_SUCCESS;

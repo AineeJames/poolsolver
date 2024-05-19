@@ -1,5 +1,6 @@
 #include "pool.h"
 #include <math.h>
+#include <stdint.h>
 
 #ifndef NO_THREADS
 #include <pthread.h>
@@ -8,9 +9,15 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+
+// TODO add brute_forcing for
+// add threading to full game brute_forcing
+// the thread with the least moves wins
 
 void add_ball_path_point(Ball *ball) {
   if (ball->path_count == PATH_MAX - 1) {
@@ -164,7 +171,7 @@ void handle_ball_hit_wall(Ball *ball) {
   }
 }
 
-void step_physics_sim(Ball *balls, int num_balls) {
+void step_physics_sim(Ball *balls, int num_balls, uint32_t cur_step_count) {
   // check if balls hit each other
 
   for (int i = 0; i < num_balls; i++) {
@@ -192,8 +199,9 @@ void step_physics_sim(Ball *balls, int num_balls) {
     for (int j = 0; j < 6; j++) {
       bool pocketed = CheckCollisionPointCircle(balls[i].position,
                                                 pocket_vecs[j], POCKET_RADIUS);
-      if (pocketed) {
+      if (pocketed && !balls[i].pocketed) {
         balls[i].pocketed = true;
+        balls[i].step_count_pocketed = cur_step_count;
         balls[i].velocity = (Vector2){0, 0};
         balls[i].collision_handled = true;
         add_ball_path_point(&balls[i]);
@@ -236,7 +244,7 @@ void benchmark_physics_sim() {
   size_t sim_count = 0;
   while (clock() < end_time) {
     while (!is_sim_at_rest(&balls[0])) {
-      step_physics_sim(&balls[0], NUM_BALLS);
+      step_physics_sim(&balls[0], NUM_BALLS, step_count);
       step_count++;
     }
     init_balls(&balls[0]);
@@ -285,18 +293,23 @@ Vector2 random_velocity_in_degree_range(int min_degree, int max_degree) {
 Vector2 brute_force(int num_sims) {
   printf("Brute forcing optimal shot from %d random shots\n", num_sims);
   Ball balls[NUM_BALLS] = {0};
-  init_balls(&balls[0]);
   Vector2 cur_best_velocity = {0, 0};
   uint32_t best_balls_pocketed = 0;
 
+  struct timeval timecheck;
+
+  gettimeofday(&timecheck, NULL);
+  long start = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
+
   SetTraceLogLevel(LOG_FATAL);
+  init_balls(&balls[0]);
   for (int i = 0; i < num_sims; i++) {
     Vector2 cur_velocity = random_velocity_in_degree_range(160, 200);
     init_balls(&balls[0]);
     balls[0].velocity = cur_velocity;
     size_t step_count = 0;
     while (!is_sim_at_rest(&balls[0]) && step_count < 40000) {
-      step_physics_sim(&balls[0], NUM_BALLS);
+      step_physics_sim(&balls[0], NUM_BALLS, step_count);
       step_count++;
     }
     uint32_t num_pocketed = count_balls_pocketed(&balls[0]);
@@ -309,8 +322,120 @@ Vector2 brute_force(int num_sims) {
     }
   }
   SetTraceLogLevel(LOG_INFO);
+  gettimeofday(&timecheck, NULL);
+  long end = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
+
+  long elapsed_time = end - start;
+
+  printf("Completed %d games in %ld milliseconds.\n", num_sims, elapsed_time);
+  printf("Sims per second: %.2f\n",
+         (float)num_sims / ((float)elapsed_time / 1000));
+
   printf("Best num pocketed was %d\n", best_balls_pocketed);
   return cur_best_velocity;
+}
+
+uint32_t sim_balls(Ball *balls, Vector2 cue_ball_vel, uint32_t sim_step_count) {
+  balls[0].velocity = cue_ball_vel;
+  size_t step_count = sim_step_count;
+  while (!is_sim_at_rest(balls) && (step_count - sim_step_count) < 40000 &&
+         !is_cue_pocketed(balls)) {
+    step_physics_sim(balls, NUM_BALLS, step_count);
+    step_count++;
+  }
+  return step_count;
+}
+
+void clear_ball_paths(Ball *balls) {
+
+  for (int i = 0; i < NUM_BALLS; i++) {
+    balls[i].path_count = 0;
+  }
+}
+
+bool is_eight_ball_valid(Ball *balls) {
+  // returns true if not pocketed
+  // or was the last ball pocketed
+  if (balls[8].pocketed) {
+    uint32_t balls_left = NUM_BALLS - count_balls_pocketed(balls) - 1;
+    if (balls_left) {
+      printf("eight ball_pocketed with balls balls_left\n");
+      printf("balls left to pocket\n");
+      for (int i = 1; i < NUM_BALLS; i++) {
+        if (!balls[i].pocketed)
+          printf("need to pocket %d ball\n", i);
+      }
+      return false;
+    } else {
+      // check that the pocketed step count is greatest for 8 ball
+      //
+      uint32_t eight_ball_pocket_step_count = balls[8].step_count_pocketed;
+      for (int i = 1; i < NUM_BALLS; i++) {
+        if (i == 8) {
+          continue;
+        }
+        if (balls[i].step_count_pocketed > eight_ball_pocket_step_count) {
+          printf("eight ball_pocketed before %d\n", i);
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+MoveList find_perfect_game() {
+
+  const int MAX_MOVES = 30;
+  Vector2 *velocities = malloc(sizeof(Vector2) * MAX_MOVES);
+  MoveList moves = {
+      .length = 0, .capacity = MAX_MOVES, .velocities = velocities};
+  Ball balls[NUM_BALLS] = {0};
+  Ball copyma_balls[NUM_BALLS] = {0};
+  init_balls(balls);
+
+  const int move_sim_amount = 10000;
+  uint32_t sim_step_count = 0;
+  for (int i = 0; i < MAX_MOVES; i++) {
+    uint32_t cur_move_least_balls_left = UINT32_MAX;
+
+    for (int j = 0; j < move_sim_amount; j++) {
+      // remember the balls
+      memcpy(&copyma_balls, &balls, sizeof(balls));
+
+      Vector2 rand_vel = random_velocity_in_degree_range(0, 360);
+      sim_balls(balls, rand_vel, sim_step_count);
+
+      uint32_t balls_left = NUM_BALLS - count_balls_pocketed(balls) - 1;
+      if (!is_cue_pocketed(balls) && balls_left < cur_move_least_balls_left &&
+          is_eight_ball_valid(balls)) {
+        // this is the vel to remember
+        moves.velocities[moves.length] = rand_vel;
+        cur_move_least_balls_left = balls_left;
+      }
+      memcpy(&balls, &copyma_balls, sizeof(balls));
+    }
+    moves.length++;
+    sim_step_count =
+        sim_balls(balls, moves.velocities[moves.length - 1], sim_step_count);
+
+    printf("On move %d with %d balls pocketed, step_count = %d \n", i,
+           count_balls_pocketed(balls), sim_step_count);
+    if (!is_cue_pocketed(balls) && count_balls_pocketed(balls) == 15) {
+      printf("Finished game in %zu moves!\n", moves.length);
+      for (int i = 0; i < moves.length; i++) {
+        printf("Vel %d is (%f,%f)\n", i, moves.velocities[i].x,
+               moves.velocities[i].y);
+      }
+      for (int i = 1; i < NUM_BALLS; i++) {
+        printf("%d ball pocketed at step count %d\n", i,
+               balls[i].step_count_pocketed);
+      }
+      break;
+    }
+  }
+
+  return moves;
 }
 
 #ifndef NO_THREADS
@@ -331,13 +456,7 @@ void *thread_func(void *arg) {
 
     Vector2 cur_velocity = random_velocity_in_degree_range(160, 200);
     init_balls(balls);
-    balls[0].velocity = cur_velocity;
-    size_t step_count = 0;
-    while (!is_sim_at_rest(balls) && step_count < 40000 &&
-           !is_cue_pocketed(balls)) {
-      step_physics_sim(balls, NUM_BALLS);
-      step_count++;
-    }
+    sim_balls(balls, cur_velocity, 0);
     uint32_t num_pocketed = count_balls_pocketed(balls);
     if (!is_cue_pocketed(balls) &&
         num_pocketed > thread_arg->best_balls_pocketed) {
