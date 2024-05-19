@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   SetTraceLogLevel(LOG_ERROR);
   InitWindow(1700, 900, "Pool Sim");
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
-  SetTargetFPS(120);
+  SetTargetFPS(60);
   while (!WindowShouldClose()) {
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {

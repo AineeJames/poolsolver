@@ -359,12 +359,6 @@ bool is_eight_ball_valid(Ball *balls) {
   if (balls[8].pocketed) {
     uint32_t balls_left = NUM_BALLS - count_balls_pocketed(balls) - 1;
     if (balls_left) {
-      printf("eight ball_pocketed with balls balls_left\n");
-      printf("balls left to pocket\n");
-      for (int i = 1; i < NUM_BALLS; i++) {
-        if (!balls[i].pocketed)
-          printf("need to pocket %d ball\n", i);
-      }
       return false;
     } else {
       // check that the pocketed step count is greatest for 8 ball
@@ -375,7 +369,6 @@ bool is_eight_ball_valid(Ball *balls) {
           continue;
         }
         if (balls[i].step_count_pocketed > eight_ball_pocket_step_count) {
-          printf("eight ball_pocketed before %d\n", i);
           return false;
         }
       }
@@ -394,7 +387,7 @@ MoveList find_perfect_game() {
   Ball copyma_balls[NUM_BALLS] = {0};
   init_balls(balls);
 
-  const int move_sim_amount = 10000;
+  const int move_sim_amount = 5000;
   uint32_t sim_step_count = 0;
   for (int i = 0; i < MAX_MOVES; i++) {
     uint32_t cur_move_least_balls_left = UINT32_MAX;
