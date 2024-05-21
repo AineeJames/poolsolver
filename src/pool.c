@@ -278,7 +278,7 @@ Vector2 random_velocity_in_degree_range(int min_degree, int max_degree) {
   float angle_radians = angle_degrees * (M_PI / 180.0f);
 
   // Generate a random power between 10 and 200
-  float power = GetRandomValue(10, 100);
+  float power = GetRandomValue(10, 200);
 
   // Convert polar coordinates (angle, power) to Cartesian coordinates (vx,
   // vy)
@@ -378,7 +378,6 @@ bool is_eight_ball_valid(Ball *balls) {
 }
 
 MoveList find_perfect_game() {
-
   const int MAX_MOVES = 30;
   Vector2 *velocities = malloc(sizeof(Vector2) * MAX_MOVES);
   MoveList moves = {
@@ -387,7 +386,7 @@ MoveList find_perfect_game() {
   Ball copyma_balls[NUM_BALLS] = {0};
   init_balls(balls);
 
-  const int move_sim_amount = 5000;
+  const int move_sim_amount = 50000;
   uint32_t sim_step_count = 0;
   for (int i = 0; i < MAX_MOVES; i++) {
     uint32_t cur_move_least_balls_left = UINT32_MAX;
@@ -425,6 +424,69 @@ MoveList find_perfect_game() {
                balls[i].step_count_pocketed);
       }
       break;
+    }
+  }
+
+  return moves;
+}
+
+// This find perfect game will simulate thousands of
+// full games
+MoveList find_perfect_game_2() {
+
+  const int MAX_MOVES = 30;
+  Vector2 *velocities = malloc(sizeof(Vector2) * MAX_MOVES);
+  Vector2 *cur_best_vels = malloc(sizeof(Vector2) * MAX_MOVES);
+  MoveList cur_best_moves = {
+      .length = 0, .capacity = MAX_MOVES, .velocities = cur_best_vels};
+  MoveList moves = {
+      .length = 0, .capacity = MAX_MOVES, .velocities = velocities};
+  uint32_t cur_best_moves_to_win = 30;
+
+  Ball balls[NUM_BALLS] = {0};
+  Ball copyma_balls[NUM_BALLS] = {0};
+  init_balls(balls);
+
+  const int game_sim_amount = 500000;
+  uint32_t sim_step_count = 0;
+
+  memcpy(&copyma_balls, &balls, sizeof(balls));
+  for (int i = 0; i < game_sim_amount; i++) {
+
+    // printf("simming game %d\n", i);
+    if (i % 10000 == 0) {
+
+      printf("simming game %d\n", i);
+    }
+    moves.length = 0;
+    sim_step_count = 0;
+
+    memcpy(&balls, &copyma_balls, sizeof(balls));
+    for (int j = 0; j < MAX_MOVES; j++) {
+      // remember the balls
+
+      Vector2 rand_vel = random_velocity_in_degree_range(0, 360);
+      sim_step_count = sim_balls(balls, rand_vel, sim_step_count);
+      if (is_cue_pocketed(balls) ||
+          (j > 1 && count_balls_pocketed(balls) < 1)) {
+        break;
+      }
+
+      moves.velocities[moves.length] = rand_vel;
+      moves.length++;
+    }
+    if (!is_cue_pocketed(balls) && count_balls_pocketed(balls) > 3) {
+      printf("scored %d balls\n", count_balls_pocketed(balls));
+    }
+
+    if (!is_cue_pocketed(balls) && is_eight_ball_valid(balls) &&
+        moves.length < cur_best_moves_to_win &&
+        count_balls_pocketed(balls) == 15) {
+      // this is the vel to remember
+      printf("recorded completed game with %zu moves\n", moves.length);
+      memcpy(cur_best_moves.velocities, velocities,
+             sizeof(Vector2) * MAX_MOVES);
+      cur_best_moves.length = moves.length;
     }
   }
 

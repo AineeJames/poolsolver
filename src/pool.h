@@ -83,6 +83,7 @@ bool is_sim_at_rest(Ball *balls);
 void clear_ball_paths(Ball *balls);
 
 MoveList find_perfect_game();
+MoveList find_perfect_game_2();
 #ifndef NO_THREADS
 Vector2 brute_force_threaded(int num_sims);
 #endif
