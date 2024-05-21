@@ -3,6 +3,7 @@
 #include <raymath.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 void draw_pool_table(Texture2D table_texture) {
   DrawTexturePro(table_texture,
@@ -81,6 +82,7 @@ int main(int argc, char *argv[]) {
     num_sims = atoi(argv[1]);
   }
 
+  SetRandomSeed(time(NULL));
   Ball balls[NUM_BALLS] = {0};
 // benchmark_physics_sim();
 #ifndef NO_THREADS
@@ -97,7 +99,7 @@ int main(int argc, char *argv[]) {
   SetTraceLogLevel(LOG_ERROR);
   InitWindow(1700, 900, "Pool Sim");
   Texture2D table_texture = LoadTexture("assets/pool_table.png");
-  SetTargetFPS(60);
+  SetTargetFPS(20);
   while (!WindowShouldClose()) {
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
